@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/reset.css">
+<link rel="stylesheet" href="css/default.css">
+<script type="module" src="js/anilist.js"></script>
+</head>
+
+<body>
+<table id="list"></table>
+
+<button id="new_anime_button"><u>A</u>dd a new anime</button>
+
+<dialog id="textarea_popup">
+	<textarea style="width: 600px;height: 400px;"></textarea>
+	<div style="display:flex; justify-content: right; gap: 10px;">
+		<button class="ok_btn">Ok</button>
+		<button class="cancel_btn">Cancel</button>
+	</div>
+</dialog>
+
+<template id="anime_template"><tr class="anime" tabindex="0">
+	<td><button class="remove_btn" tabindex="-1"><u>Del</u></button></td>
+	<td><button class="move_btn" tabindex="-1"><u>M</u>ove</button></td>
+	<td><button class="edit_btn" tabindex="-1"><u>E</u>dit</button></td>
+	<td><p class="air_time"></p></td>
+	<td><button class="prev_btn arrow" tabindex="-1"><u>🠈</u></button></td>
+	<td><p class="episode_number"></p></td>
+	<td><button class="next_btn arrow" tabindex="-1"><u>🠊</u></button></td>
+	<td><p><a class="title" href="" target="_blank" tabindex="-1"></a></p></td>
+</tr></template>
+
+</body>
+</html>
