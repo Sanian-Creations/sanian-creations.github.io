@@ -1,0 +1,113 @@
+:root {
+	font-size: 16px;
+	color: #fbfbfe;
+}
+button {
+	background: #2c2b32;
+	font-weight: bold;
+	color: inherit;
+	border: none;
+	border-radius: 4px;
+	padding: 5px 10px;
+}
+button[disabled] {
+	background-color: #222128;
+	color: #75747a;
+}
+button:hover:not([disabled]) {
+	background: #3b3a41;
+	cursor: pointer;
+}
+body {
+	background: #1c1b22;
+	font-family: sans-serif;
+
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 10px;
+}
+
+dialog {
+	background: #1c1b22;
+	border-radius: 4px;
+	color: inherit;
+}
+p {
+	margin: 0;
+	padding: 0;
+}
+td > p {
+	margin: 0 5px;
+}
+
+/* these rules make everything completely fill the cell they are in */
+tr { height: 0px; /*this is ignored*/}
+td { height: 100%; }
+td > button { height: 100%; }
+
+td {
+	vertical-align: center;
+	padding: 2px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+td>button.arrow {
+	padding: 0 8px;
+}
+.air_time {
+	min-width: 100px;
+}
+a {
+	color:white !important;
+}
+dialog::backdrop {
+	background: #111111AA;
+}
+dialog {
+	border: none;
+	border-radius: 4px;
+}
+textarea {
+  background-color: #23222b;
+  border: 1px solid #7c7b82;
+  border-radius: 4px;
+  color: #fbfbfe;
+}
+textarea:focus-visible {
+	border-color: transparent;
+	outline: 2px solid #00ddff;
+	outline-offset: -1px;
+}
+[hidden] {
+  display: none !important;
+}
+
+tr:first-child > td { padding-top: 0; }
+tr:last-child > td { padding-bottom: 0; }
+tr > td:first-child { padding-left: 0; }
+
+tr:focus {
+	background: #3b3a41;
+	outline: none;
+}
+
+tr button u {
+	text-decoration-line: none;
+}
+tr:focus button u {
+	text-decoration-line: underline;
+}
+tr a {
+	text-decoration-line: none;
+}
+tr:focus a {
+	text-decoration-line: underline;
+}
+
+.episode_number {
+	min-width: max-content;
+}
