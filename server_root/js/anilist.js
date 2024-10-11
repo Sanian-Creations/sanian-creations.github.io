@@ -27,49 +27,52 @@ const edit_button_ok = edit_dialog.querySelector("button.ok");
 const new_anime_btn = document.getElementById("new_anime_button");
 
 class Anime { // json serializable
-	#data;
+	data;
 	elem;
 
 	constructor(in_data) {
-		this.#data = in_data ?? {};
-		this.#data.episode_number ??= 1;
-		this.#data.title ??= "";
-		this.#data.link ??= "";
-		this.#data.air_time ??= "";
+		this.data = in_data ?? {};
+		this.data.episode_number ??= 1;
+		this.data.title ??= "";
+		this.data.link ??= "";
+		this.data.air_time ??= "";
 
 		this.elem = anime_template.content.cloneNode(true).children[0]; // true for deepcopy
 
-		this.set_data(in_data);
+		this.update_all();
 		this.init_callbacks();
 	}
 
-	set_data(in_data) {
-		for (const field in this.#data) { this[field] = in_data[field]; }
+	update_all() {
+		for (const field in this.data) { this.update(field); }
 	}
-
-	get episode_number() { return this.#data.episode_number; }
-	set episode_number(val) {
-		this.#data.episode_number = val;
-		this.elem.querySelector(".episode_number").innerText = `Ep. ${this.episode_number}`;
-		this.elem.querySelector(".title").href = generate_link(this.link, this.episode_number);
+	update(fieldname) {
+		switch (fieldname) {
+			case "title": {
+				this.elem.querySelector(".title").innerText = this.data.title;
+			} break;
+			case "episode_number": 
+				this.elem.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
+				// FALLTHROUGH IS ACTUALLY USEFUL FOR ONCE HOLYYY
+			case "link": {
+				this.elem.querySelector(".title").href = generate_link(this.data.link, this.data.episode_number);
+			} break;
+			case "air_time": {
+				this.elem.querySelector(".air_time").innerText = this.data.air_time;
+			} break;
+			default: {
+				alert(`tried to set/update non existent field '${fieldname}'`);
+			} break;
+		}
 	}
-
-	get title() { return this.#data.title; }
-	set title(val) {
-		this.#data.title = val;
-		this.elem.querySelector(".title").innerText = val;
+	set(fieldname, val) {
+		this.data[fieldname] = val;
+		this.update(fieldname);
 	}
-
-	get link() { return this.#data.link; }
-	set link(link) {
-		this.#data.link = link;
-		this.elem.querySelector(".title").href = generate_link(this.link, this.episode_number);
-	}
-
-	get air_time() { return this.#data.air_time; }
-	set air_time(val) {
-		this.#data.air_time = val;
-		this.elem.querySelector(".air_time").innerText = val;
+ 
+	inc_episode_by(amount) {
+		this.data.episode_number += amount;
+		this.update("episode_number");
 	}
 
 	init_callbacks() {
@@ -79,10 +82,10 @@ class Anime { // json serializable
 		const move_btn   = this.elem.querySelector(".move_btn");
 		const remove_btn = this.elem.querySelector(".remove_btn");
 
-		next_btn  .addEventListener("click", e => { this.episode_number += 1; save_list(); });
-		prev_btn  .addEventListener("click", e => { this.episode_number -= 1; save_list(); });
+		next_btn  .addEventListener("click", e => { this.inc_episode_by(1);  save_list(); });
+		prev_btn  .addEventListener("click", e => { this.inc_episode_by(-1); save_list(); });
 		remove_btn.addEventListener("click", e => {
-			if (confirm(`Delete ${this.title}?`)) {
+			if (confirm(`Delete ${this.data.title}?`)) {
 				array_remove(list, list.indexOf(this));
 				save_list();
 				if (this.elem === document.activeElement) {
@@ -92,19 +95,23 @@ class Anime { // json serializable
 			}
 		});
 		edit_btn.addEventListener("click", e => {
-			remove_children(edit_fields);
-			for (const field in this.#data) {
-				const input = create_input_for(field, this.#data[field]);
-				edit_fields.append(input);
+			const inputs = edit_fields.querySelectorAll(".field_input");
+			for (let i = 0; i < inputs.length; i++) {
+				const input = inputs[i];
+				const field = input.dataset.field;
+				input.innerText = this.data[field];
 			}
 
-			edit_button_ok.onclick = () => {
-				this.set_from_inputs(edit_fields);
+			edit_button_ok.onclick = e => {
+				const ok = this.set_from_inputs(inputs);
+				if (!ok) { e.preventDefault(); return; }
 				save_list();
 			}
+			edit_dialog.dataset.mode = "edit";
 			edit_dialog.showModal();
 		});
 
+		// TODO moving is jank rn, make it less jank
 		move_btn.addEventListener("click", e => {
 			if (moving) {
 
@@ -148,8 +155,8 @@ class Anime { // json serializable
 		this.elem.addEventListener("mouseenter", e => e.target.focus());
 	}
 
-	set_from_inputs(elem_with_inputs) {
-		const inputs = elem_with_inputs.querySelectorAll(".field_input");
+	set_from_inputs(inputs) {
+		let ok = true;
 		for (let i = 0; i < inputs.length; i++) {
 			const input = inputs[i];
 			let value;
@@ -157,36 +164,48 @@ class Anime { // json serializable
 				value = Number(input.innerText);
 				if (isNaN(value)) {
 					alert(`${input.dataset.field} is not a number (you typed "${input.innerText}")`);
+					ok = false;
 					continue;
 				}
 			} else {
 				value = input.innerText;
 			}
-			this[input.dataset.field] = value;
+			this.set(input.dataset.field, value);
 		}
+		return ok;
 	}
 	toJSON() {
-		return this.#data;
+		return this.data;
 	}
 }
 
+// TODO make a custom input class for what is currently fake_input, because pressing Enter inside it currently inserts a newline which suuuucks
 
 //
 // Adding anime
 //
 new_anime_btn.addEventListener("click", function () {
-	// TODO make adding anime the same popup as the edit popup so that you can fill in the fields easily without alerts
-	// But then also make a custom input class because pressing Enter inside the fake_input currently inserts a newline
-	const anime = new Anime({
-		link:  prompt("URL\nReplace the episode number with EPISODE_NUMBER"),
-		title: prompt("Anime title")
-	});
+	const anime = new Anime();
 
-	list.push(anime);
-	save_list();
+	const inputs = edit_fields.querySelectorAll(".field_input");
+	for (let i = 0; i < inputs.length; i++) {
+		const input = inputs[i];
+		const field = input.dataset.field;
+		input.innerText = anime.data[field];
+	}
 
-	list_elem.append(anime.elem);
-	anime.elem.focus();
+	edit_button_ok.onclick = e => {
+		const ok = anime.set_from_inputs(inputs);
+		if (!ok) { e.preventDefault(); return; }
+
+		list.push(anime);
+		save_list();
+	
+		list_elem.append(anime.elem);
+		anime.elem.focus();
+	}
+	edit_dialog.dataset.mode = "add";
+	edit_dialog.showModal();
 });
 
 //
@@ -207,6 +226,7 @@ import_button_ok.addEventListener("click", e => {
 		alert(err); 
 		return; 
 	}
+	import_textarea.value = "";
 	save_list();
 });
 
@@ -283,17 +303,6 @@ document.addEventListener("keydown", e => {
 
 // --- utility functions ---
 
-
-function create_input_for(field, value) {
-	const elem = field_input_template.content.cloneNode(true).children[0];
-	const input = elem.querySelector(".field_input");
-	const label = elem.querySelector("label");
-	label.innerText = field;
-	input.dataset.field = field;
-	if (value.constructor === Number) input.dataset.type = "number";
-	input.innerText = value;
-	return elem;
-}
 
 function generate_link(link, ep) {
 	return link?.replace("EPISODE_NUMBER", ep);
