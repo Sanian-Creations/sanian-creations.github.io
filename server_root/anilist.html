@@ -8,16 +8,42 @@
 </head>
 
 <body>
+
+
 <table id="list"></table>
 
 <button id="new_anime_button"><u>A</u>dd a new anime</button>
 
-<dialog id="textarea_popup">
+<div style>
+	<button id="import_button">Import data</button>
+	<button id="export_button">Export data</button>
+</div>
+
+
+<dialog id="edit_dialog">
+	<!-- <textarea style="width: 600px;height: 400px;"></textarea> -->
+	<table id="edit_fields">
+		
+	</table>
+	<form style="display:flex; justify-content: right; gap: 10px;" method="dialog">
+		<button class="ok">Ok</button>
+		<button class="cancel">Cancel</button>
+	</form>
+</dialog>
+
+<dialog id="import_dialog">
 	<textarea style="width: 600px;height: 400px;"></textarea>
-	<div style="display:flex; justify-content: right; gap: 10px;">
-		<button class="ok_btn">Ok</button>
-		<button class="cancel_btn">Cancel</button>
-	</div>
+	<form style="display:flex; justify-content: right; gap: 10px;" method="dialog">
+		<button class="ok">Ok</button>
+		<button class="cancel">Cancel</button>
+	</form>
+</dialog>
+
+<dialog id="export_dialog">
+	<textarea style="width: 600px;height: 400px;" disabled></textarea>
+	<form style="display:flex; justify-content: right; gap: 10px;" method="dialog">
+		<button class="ok">Ok</button>
+	</form>
 </dialog>
 
 <template id="anime_template"><tr class="anime" tabindex="0">
@@ -30,6 +56,7 @@
 	<td><button class="next_btn arrow" tabindex="-1"><u>🠊</u></button></td>
 	<td><p><a class="title" href="" target="_blank" tabindex="-1"></a></p></td>
 </tr></template>
+<template id="field_input_template"><tr><td><label></label></td><td><p class="fake_input field_input" contenteditable="" data-field="" data-type="text"></p></td></tr></template>
 
 </body>
 </html>

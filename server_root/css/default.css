@@ -26,6 +26,8 @@ body {
 	flex-direction: column;
 	align-items: start;
 	gap: 10px;
+
+	margin: 10px;
 }
 
 dialog {
@@ -71,17 +73,22 @@ dialog {
 	border: none;
 	border-radius: 4px;
 }
-textarea {
+input, textarea, p.fake_input {
   background-color: #23222b;
   border: 1px solid #7c7b82;
   border-radius: 4px;
   color: #fbfbfe;
+  padding: 5px;
 }
-textarea:focus-visible {
+p.fake_input {
+	word-wrap: anywhere;
+}
+:is(input, textarea, p.fake_input):focus-visible {
 	border-color: transparent;
 	outline: 2px solid #00ddff;
 	outline-offset: -1px;
 }
+
 [hidden] {
   display: none !important;
 }
