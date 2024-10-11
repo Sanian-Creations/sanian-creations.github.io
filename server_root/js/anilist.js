@@ -1,52 +1,74 @@
 let moving = undefined; // anime which is currently being moved, or undefined if one is not being moved
+let list;
+
+function pr(a) {
+	console.log(a);
+	return a;
+}
 
 const list_elem      = document.getElementById("list");
 const anime_template = document.getElementById("anime_template");
-const textarea_popup = document.getElementById("textarea_popup");
-const textarea       = textarea_popup.getElementsByTagName("textarea")[0];
-const textarea_ok    = textarea_popup.getElementsByClassName("ok_btn")[0];
-const new_anime_btn  = document.getElementById("new_anime_button");
+const field_input_template = document.getElementById("field_input_template");
+
+const export_button    = document.getElementById("export_button");
+const export_dialog    = document.getElementById("export_dialog");
+const export_textarea  = export_dialog.querySelector("textarea");
+
+const import_button    = document.getElementById("import_button");
+const import_dialog    = document.getElementById("import_dialog");
+const import_textarea  = import_dialog.querySelector("textarea");
+const import_button_ok = import_dialog.querySelector("button.ok");
+
+const edit_dialog    = document.getElementById("edit_dialog");
+const edit_fields    = edit_dialog.querySelector("#edit_fields");
+const edit_textarea  = edit_dialog.querySelector("textarea");
+const edit_button_ok = edit_dialog.querySelector("button.ok");
+
+const new_anime_btn = document.getElementById("new_anime_button");
 
 class Anime { // json serializable
-	data;
+	#data;
 	elem;
 
-	constructor(data) {
-		this.data = data ?? {};
-		this.data.episode_number ??= 1;
-		this.data.title ??= "";
-		this.data.link ??= "";
-		this.data.air_time ??= "";
+	constructor(in_data) {
+		this.#data = in_data ?? {};
+		this.#data.episode_number ??= 1;
+		this.#data.title ??= "";
+		this.#data.link ??= "";
+		this.#data.air_time ??= "";
 
 		this.elem = anime_template.content.cloneNode(true).children[0]; // true for deepcopy
 
-		for (const field in data) { this[field] = data[field]; } // use setters to init html element values
-
+		this.set_data(in_data);
 		this.init_callbacks();
 	}
 
-	get episode_number() { return this.data.episode_number; }
+	set_data(in_data) {
+		for (const field in this.#data) { this[field] = in_data[field]; }
+	}
+
+	get episode_number() { return this.#data.episode_number; }
 	set episode_number(val) {
-		this.data.episode_number = val;
+		this.#data.episode_number = val;
 		this.elem.querySelector(".episode_number").innerText = `Ep. ${this.episode_number}`;
 		this.elem.querySelector(".title").href = generate_link(this.link, this.episode_number);
 	}
 
-	get title() { return this.data.title; }
+	get title() { return this.#data.title; }
 	set title(val) {
-		this.data.title = val;
+		this.#data.title = val;
 		this.elem.querySelector(".title").innerText = val;
 	}
 
-	get link() { return this.data.link; }
+	get link() { return this.#data.link; }
 	set link(link) {
-		this.data.link = link;
+		this.#data.link = link;
 		this.elem.querySelector(".title").href = generate_link(this.link, this.episode_number);
 	}
 
-	get air_time() { return this.data.air_time; }
+	get air_time() { return this.#data.air_time; }
 	set air_time(val) {
-		this.data.air_time = val;
+		this.#data.air_time = val;
 		this.elem.querySelector(".air_time").innerText = val;
 	}
 
@@ -70,16 +92,17 @@ class Anime { // json serializable
 			}
 		});
 		edit_btn.addEventListener("click", e => {
-			textarea.value = JSON.stringify(this, undefined, "  ");
-			textarea_ok.onclick = () => {
-				try {
-					let new_anime = JSON.parse(textarea.value);
-					for (const field in new_anime) { this[field] = new_anime[field]; }
-					save_list();
-					textarea_popup.close();
-				} catch(err) { alert(err); }
+			remove_children(edit_fields);
+			for (const field in this.#data) {
+				const input = create_input_for(field, this.#data[field]);
+				edit_fields.append(input);
 			}
-			textarea_popup.showModal();
+
+			edit_button_ok.onclick = () => {
+				this.set_from_inputs(edit_fields);
+				save_list();
+			}
+			edit_dialog.showModal();
 		});
 
 		move_btn.addEventListener("click", e => {
@@ -125,16 +148,35 @@ class Anime { // json serializable
 		this.elem.addEventListener("mouseenter", e => e.target.focus());
 	}
 
+	set_from_inputs(elem_with_inputs) {
+		const inputs = elem_with_inputs.querySelectorAll(".field_input");
+		for (let i = 0; i < inputs.length; i++) {
+			const input = inputs[i];
+			let value;
+			if (input.dataset.type === "number") {
+				value = Number(input.innerText);
+				if (isNaN(value)) {
+					alert(`${input.dataset.field} is not a number (you typed "${input.innerText}")`);
+					continue;
+				}
+			} else {
+				value = input.innerText;
+			}
+			this[input.dataset.field] = value;
+		}
+	}
 	toJSON() {
-		return this.data;
+		return this.#data;
 	}
 }
 
-const list = await load_list();
 
-textarea_popup.getElementsByClassName("cancel_btn")[0].addEventListener("click", () => textarea_popup.close());
-
+//
+// Adding anime
+//
 new_anime_btn.addEventListener("click", function () {
+	// TODO make adding anime the same popup as the edit popup so that you can fill in the fields easily without alerts
+	// But then also make a custom input class because pressing Enter inside the fake_input currently inserts a newline
 	const anime = new Anime({
 		link:  prompt("URL\nReplace the episode number with EPISODE_NUMBER"),
 		title: prompt("Anime title")
@@ -147,6 +189,30 @@ new_anime_btn.addEventListener("click", function () {
 	anime.elem.focus();
 });
 
+//
+// Exporting
+//
+export_button.addEventListener("click", e => {
+	export_textarea.value = JSON.stringify(list);
+	export_dialog.showModal();
+});
+
+//
+// Importing
+//
+import_button.addEventListener("click", () => import_dialog.showModal());
+import_button_ok.addEventListener("click", e => {
+	const err = load_list_from_json(import_textarea.value);
+	if (err) { 
+		alert(err); 
+		return; 
+	}
+	save_list();
+});
+
+//
+// Hotkeys
+//
 list_elem.addEventListener("keydown", e => {
 	switch (e.code) {
 
@@ -159,7 +225,7 @@ list_elem.addEventListener("keydown", e => {
 		case "ArrowLeft":  document.activeElement.querySelector(".prev_btn").click();   break;
 		case "ArrowRight": document.activeElement.querySelector(".next_btn").click();   break;
 		case "KeyM":       document.activeElement.querySelector(".move_btn").click();   break;
-		case "KeyE":       document.activeElement.querySelector(".edit_btn").click();   break;
+		case "KeyE":       document.activeElement.querySelector(".edit_btn").click();   e.preventDefault(); /* otherwise it types an 'e' in the edit fields */ break;
 		case "Delete":     document.activeElement.querySelector(".remove_btn").click(); break;
 
 		case "Escape":
@@ -180,16 +246,69 @@ list_elem.addEventListener("keydown", e => {
 	}
 });
 
+// make backdrop clicks close their corresponding dialog.
+let mousedown_x, mousedown_y;
+document.addEventListener('mousedown', e => {
+	mousedown_x = e.clientX;
+	mousedown_y = e.clientY;
+});
+document.addEventListener("click", e => {
+	if (e.target.tagName !== "DIALOG") return;
+	const dialog = e.target;
+
+	const rect = dialog.getBoundingClientRect();
+	const pressed_in_dialog  = in_rect(mousedown_x, mousedown_y, rect);
+	const released_in_dialog = in_rect(e.clientX, e.clientY, rect);
+	const clicked_dialog = pressed_in_dialog || released_in_dialog;
+
+	if (!clicked_dialog) { // clicked on the backdrop of the dialog, that should close it.
+	  dialog.close();
+	}
+});
+
+// close dialogs on escape
+document.addEventListener("keydown", e => {
+	switch (e.code) {
+		case "Escape": 
+			const dialogs = document.querySelectorAll("dialog");
+			for (let i = 0; i < dialogs.length; i++) {
+				if (dialogs[i].open) {
+					dialogs[i].close();
+					return;
+				}
+			}
+		break;
+	}
+});
+
 // --- utility functions ---
 
+
+function create_input_for(field, value) {
+	const elem = field_input_template.content.cloneNode(true).children[0];
+	const input = elem.querySelector(".field_input");
+	const label = elem.querySelector("label");
+	label.innerText = field;
+	input.dataset.field = field;
+	if (value.constructor === Number) input.dataset.type = "number";
+	input.innerText = value;
+	return elem;
+}
 
 function generate_link(link, ep) {
 	return link?.replace("EPISODE_NUMBER", ep);
 }
 
-async function load_list() {
-	let list = JSON.parse(await localStorage.getItem("anilist.list") ?? "[]");
-	list = list.map(data => {
+/**
+ * @param {string} input_json 
+ * @returns {Error}
+ */
+function load_list_from_json(input_json) {
+	const [arr, err] = try_json_parse_array(input_json);
+	if (err) return err;
+
+	remove_children(list_elem); // only remove what was there if parsing was successful
+	list = arr.map(data => {
 		const anime = new Anime(data);
 		list_elem.append(anime.elem);
 		return anime;
@@ -198,9 +317,8 @@ async function load_list() {
 	if (list.length > 0) {
 		list[0].elem.focus();
 	}
-
-	return list;
 }
+
 function save_list() {
 	localStorage.setItem("anilist.list", JSON.stringify(list));
 }
@@ -208,10 +326,55 @@ function save_list() {
 function array_remove(arr, index) {
 	arr.splice(index, 1);
 }
+
 function array_insert(arr, index, elem) {
-	list.splice(index, 0, elem);
+	arr.splice(index, 0, elem);
 }
 
-// function index_in_parent(child) {
-//   return Array.prototype.indexOf.call(child.parentNode.children, child);
-// }
+function remove_children(elem) {
+	while (elem.lastChild) elem.lastChild.remove();
+}
+
+function in_rect(x, y, rect) {
+	return x >= rect.left && x <= rect.left + rect.width &&
+		y >= rect.top  && y <= rect.top  + rect.height;
+}
+
+/**
+ * @param {string} json 
+ * @returns {[any, Error]}
+ */
+function try_json_parse(json) /* [parsed, err] */ {
+	try {
+		return [JSON.parse(json)];
+	} catch (err) {
+		return [undefined, err];
+	}
+}
+
+/**
+ * @param {string} json 
+ * @returns {[Array, Error]}
+ */
+function try_json_parse_array(json) /* [arr, err] */ {
+	let parsed;
+	try {
+		parsed = JSON.parse(json);
+	} catch (err) {
+		return [undefined, err];
+	}
+	if (parsed.constructor !== Array) {
+		return [undefined, `Expected json to contain an array, instead it was ${parsed.constructor.name}`];
+	}
+	return [parsed];
+}
+
+//
+// main code
+//
+{
+	const err = load_list_from_json(await localStorage.getItem("anilist.list") ?? "[]");
+	if (err) {
+		alert(err);
+	}
+}
