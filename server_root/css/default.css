@@ -77,6 +77,9 @@ dialog {
 }
 dialog:not([open]) { display: none; }
 
+input:invalid {
+	background: #681212;
+}
 input, textarea, p.fake_input {
   background-color: #23222b;
   border: 1px solid #7c7b82;

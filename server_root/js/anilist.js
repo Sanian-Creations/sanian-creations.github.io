@@ -99,7 +99,11 @@ class Anime { // json serializable
 			for (let i = 0; i < inputs.length; i++) {
 				const input = inputs[i];
 				const field = input.dataset.field;
-				input.innerText = this.data[field];
+				if (input.constructor === HTMLInputElement) {
+					input.valueAsNumber = this.data[field];
+				} else {
+					input.innerText = this.data[field];
+				}
 			}
 
 			edit_button_ok.onclick = e => {
@@ -160,13 +164,8 @@ class Anime { // json serializable
 		for (let i = 0; i < inputs.length; i++) {
 			const input = inputs[i];
 			let value;
-			if (input.dataset.type === "number") {
-				value = Number(input.innerText);
-				if (isNaN(value)) {
-					alert(`${input.dataset.field} is not a number (you typed "${input.innerText}")`);
-					ok = false;
-					continue;
-				}
+			if (input.constructor === HTMLInputElement) {
+				value = input.valueAsNumber;
 			} else {
 				value = input.innerText;
 			}
@@ -191,7 +190,11 @@ new_anime_btn.addEventListener("click", function () {
 	for (let i = 0; i < inputs.length; i++) {
 		const input = inputs[i];
 		const field = input.dataset.field;
-		input.innerText = anime.data[field];
+		if (input.constructor === HTMLInputElement) {
+			input.valueAsNumber = anime.data[field];
+		} else {
+			input.innerText = anime.data[field];
+		}
 	}
 
 	edit_button_ok.onclick = e => {
@@ -273,7 +276,7 @@ document.addEventListener('mousedown', e => {
 	mousedown_y = e.clientY;
 });
 document.addEventListener("click", e => {
-	if (e.target.tagName !== "DIALOG") return;
+	if (e.target.constructor !== HTMLDialogElement) return;
 	const dialog = e.target;
 
 	const rect = dialog.getBoundingClientRect();
