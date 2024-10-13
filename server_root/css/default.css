@@ -34,7 +34,7 @@ p {
 	margin: 0;
 	padding: 0;
 }
-td > p {
+#list td > p {
 	margin: 0 5px;
 }
 
@@ -80,21 +80,26 @@ dialog:not([open]) { display: none; }
 input:invalid {
 	background: #681212;
 }
-input, textarea, p.fake_input {
+input, textarea, my-input {
   background-color: #23222b;
   border: 1px solid #7c7b82;
   border-radius: 4px;
   color: #fbfbfe;
   padding: 5px;
 }
-p.fake_input {
-	word-wrap: anywhere;
-	min-width: 300px;
-}
-:is(input, textarea, p.fake_input):focus-visible {
+:is(input, textarea, my-input):focus-visible {
 	border-color: transparent;
 	outline: 2px solid #00ddff;
 	outline-offset: -1px;
+}
+
+#edit_fields my-input {
+	display: block;
+	word-wrap: anywhere;
+	min-width: 300px;
+}
+#edit_fields td > * {
+	margin: 0 5px;
 }
 
 [hidden] {

@@ -1,3 +1,5 @@
+import "./my-input.js"; // import nothing, but ensures the custom component is loaded
+
 let moving = undefined; // anime which is currently being moved, or undefined if one is not being moved
 let list;
 
@@ -8,7 +10,6 @@ function pr(a) {
 
 const list_elem      = document.getElementById("list");
 const anime_template = document.getElementById("anime_template");
-const field_input_template = document.getElementById("field_input_template");
 
 const export_button    = document.getElementById("export_button");
 const export_dialog    = document.getElementById("export_dialog");
@@ -21,7 +22,6 @@ const import_button_ok = import_dialog.querySelector("button.ok");
 
 const edit_dialog    = document.getElementById("edit_dialog");
 const edit_fields    = edit_dialog.querySelector("#edit_fields");
-const edit_textarea  = edit_dialog.querySelector("textarea");
 const edit_button_ok = edit_dialog.querySelector("button.ok");
 
 const new_anime_btn = document.getElementById("new_anime_button");
@@ -178,7 +178,7 @@ class Anime { // json serializable
 	}
 }
 
-// TODO make a custom input class for what is currently fake_input, because pressing Enter inside it currently inserts a newline which suuuucks
+// TODO: make pressing enter in the input class switch focus to the next element
 
 //
 // Adding anime
