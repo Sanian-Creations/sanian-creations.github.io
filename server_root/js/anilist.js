@@ -11,9 +11,10 @@ function pr(a) {
 const list_elem      = document.getElementById("list");
 const anime_template = document.getElementById("anime_template");
 
-const export_button    = document.getElementById("export_button");
-const export_dialog    = document.getElementById("export_dialog");
-const export_textarea  = export_dialog.querySelector("textarea");
+const export_button      = document.getElementById("export_button");
+const export_dialog      = document.getElementById("export_dialog");
+const export_textarea    = export_dialog.querySelector("textarea");
+const export_button_copy = export_dialog.querySelector("button.copy");
 
 const import_button    = document.getElementById("import_button");
 const import_dialog    = document.getElementById("import_dialog");
@@ -216,7 +217,18 @@ new_anime_btn.addEventListener("click", function () {
 //
 export_button.addEventListener("click", e => {
 	export_textarea.value = JSON.stringify(list);
+	export_button_copy.classList.remove("flash-fade");
 	export_dialog.showModal();
+});
+export_button_copy.addEventListener("click", async e => {
+	set_clipboard(export_textarea.value);
+	
+	// See: https://css-tricks.com/restart-css-animation/
+	export_button_copy.classList.remove("flash-fade");
+	void export_button_copy.offsetWidth;
+	export_button_copy.classList.add("flash-fade");
+	
+	e.preventDefault(); // Do not close the dialog
 });
 
 //
@@ -350,6 +362,15 @@ function remove_children(elem) {
 function in_rect(x, y, rect) {
 	return x >= rect.left && x <= rect.left + rect.width &&
 		y >= rect.top  && y <= rect.top  + rect.height;
+}
+
+async function set_clipboard(text) {
+	// Retarded API.
+	// https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
+	const type = "text/plain";
+	const blob = new Blob([text], { type });
+	const data = [new ClipboardItem({ [type]: blob })];
+	await navigator.clipboard.write(data);
 }
 
 /**
