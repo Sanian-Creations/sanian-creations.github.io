@@ -20,6 +20,7 @@ const import_button    = document.getElementById("import_button");
 const import_dialog    = document.getElementById("import_dialog");
 const import_textarea  = import_dialog.querySelector("textarea");
 const import_button_ok = import_dialog.querySelector("button.ok");
+const import_button_paste = import_dialog.querySelector("button.paste");
 
 const edit_dialog    = document.getElementById("edit_dialog");
 const edit_fields    = edit_dialog.querySelector("#edit_fields");
@@ -174,6 +175,7 @@ class Anime { // json serializable
 		}
 		return ok;
 	}
+
 	toJSON() {
 		return this.data;
 	}
@@ -221,29 +223,48 @@ export_button.addEventListener("click", e => {
 	export_dialog.showModal();
 });
 export_button_copy.addEventListener("click", async e => {
-	set_clipboard(export_textarea.value);
+	e.preventDefault(); // Do not close the dialog.  MUST be called before any 'await' or event will have passed
+	await set_clipboard(export_textarea.value);
 	
 	// See: https://css-tricks.com/restart-css-animation/
 	export_button_copy.classList.remove("flash-fade");
 	void export_button_copy.offsetWidth;
 	export_button_copy.classList.add("flash-fade");
-	
-	e.preventDefault(); // Do not close the dialog
 });
 
 //
 // Importing
 //
-import_button.addEventListener("click", () => import_dialog.showModal());
+import_button.addEventListener("click", () => {
+	import_textarea.value = "";
+	import_dialog.showModal();
+});
 import_button_ok.addEventListener("click", e => {
+	e.preventDefault();
+	import_from_textarea();
+});
+import_button_paste.addEventListener("click", async e => {
+	e.preventDefault();
+	try {
+		import_textarea.value = await get_clipboard();
+	} catch (err) {
+		if (err.name !== "NotAllowedError") {
+			alert(err);
+		}
+		return;
+	}
+	import_from_textarea();
+});
+function import_from_textarea() {
 	const err = load_list_from_json(import_textarea.value);
 	if (err) { 
-		alert(err); 
+		alert(err);
 		return; 
 	}
 	import_textarea.value = "";
 	save_list();
-});
+	import_dialog.close(); // close on success
+}
 
 //
 // Hotkeys
@@ -371,6 +392,9 @@ async function set_clipboard(text) {
 	const blob = new Blob([text], { type });
 	const data = [new ClipboardItem({ [type]: blob })];
 	await navigator.clipboard.write(data);
+}
+async function get_clipboard() {
+	return await navigator.clipboard.readText();
 }
 
 /**
