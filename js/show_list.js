@@ -330,7 +330,7 @@ function load_list_from_json(input_json) {
 }
 
 function save_list() {
-	localStorage.setItem("anilist.list", JSON.stringify(list));
+	localStorage.setItem("show_list.list", JSON.stringify(list));
 }
 
 function array_remove(arr, index) {
@@ -390,7 +390,7 @@ function try_json_parse_array(json) /* [arr, err] */ {
 // main code
 //
 {
-	const err = load_list_from_json(await localStorage.getItem("anilist.list") ?? "[]");
+	const err = load_list_from_json(await localStorage.getItem("show_list.list") ?? "[]");
 	if (err) {
 		alert(err);
 	}
