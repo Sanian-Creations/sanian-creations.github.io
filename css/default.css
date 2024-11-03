@@ -30,37 +30,14 @@ body {
 	margin: 10px;
 }
 
-p {
-	margin: 0;
-	padding: 0;
-}
-#list td > p {
-	margin: 0 5px;
-}
-
-/* these rules make everything completely fill the cell they are in */
-tr { height: 0px; /*this is ignored*/}
-td { height: 100%; }
-td > button { height: 100%; }
-
-td {
-	vertical-align: center;
-	padding: 2px;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-td>button.arrow {
-	padding: 0 8px;
-}
-.air_time {
-	min-width: 100px;
-}
 a {
-	color:white !important;
+	color: #5daeff;
 }
+a:visited {
+	color: #ae55ff;
+}
+
+dialog:not([open]) { display: none; }
 dialog::backdrop {
 	background: #111111AA;
 }
@@ -68,6 +45,7 @@ dialog {
 	background: #1c1b22;
 	color: inherit;
 	padding: 15px;
+
 	border: none;
 	border-radius: 4px;
 	filter: drop-shadow(0 0 0.75rem black);
@@ -76,7 +54,6 @@ dialog {
 	flex-direction: column;
 	gap: 15px;
 }
-dialog:not([open]) { display: none; }
 
 input:invalid {
 	background: #681212;
@@ -94,54 +71,7 @@ input, textarea, my-input {
 	outline-offset: -1px;
 }
 
-#edit_fields my-input {
+my-input {
 	display: block;
 	word-wrap: anywhere;
-	min-width: 300px;
-}
-#edit_fields td > * {
-	margin: 0 5px;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-tr:first-child > td { padding-top: 0; }
-tr:last-child > td { padding-bottom: 0; }
-tr > td:first-child { padding-left: 0; }
-
-tr:focus {
-	background: #3b3a41;
-	outline: none;
-}
-
-tr button u {
-	text-decoration-line: none;
-}
-tr:focus button u {
-	text-decoration-line: underline;
-}
-tr a {
-	text-decoration-line: none;
-}
-tr:focus a {
-	text-decoration-line: underline;
-}
-
-.episode_number {
-	min-width: max-content;
-}
-
-#edit_dialog:not([data-mode=add]) .add, 
-#edit_dialog:not([data-mode=edit]) .edit {
-	display: none;
-}
-
-.flash-fade {
-	animation: flash-fade 1.5s 1 ease-out;
-}
-@keyframes flash-fade {
-    from { background-color: white; }
-    to   {  }
 }

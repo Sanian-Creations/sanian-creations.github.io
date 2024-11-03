@@ -142,7 +142,7 @@
 }
 
 [hidden] {
-  display: none !important !important;
+  display: none !important !important; /* double important so that if you apply a display to something with !important, it will still remain hidden if it has the hidden attribute */
 }
 
 :where(p, blockquote, pre,
