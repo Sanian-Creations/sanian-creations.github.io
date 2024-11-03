@@ -1,0 +1,86 @@
+body {
+    display: flex; 
+    align-items: center;
+}
+
+a.title {
+	color:white;
+}
+
+#list td > p {
+	margin: 0 5px;
+}
+
+/* these rules make buttons completely fill the cell they are in */
+/* https://stackoverflow.com/questions/3215553/make-a-div-fill-an-entire-table-cell */
+#list tr { height: 0px; }
+#list td { height: inherit; }
+@supports (-moz-appearance:none) { /* ff specific override, doesn't work with inherit but does with 100% */
+    #list td { height: 100%; }
+}
+#list td > button { height: 100%; }
+
+
+td {
+	vertical-align: center;
+	padding: 2px;
+}
+
+table {
+	border-collapse: collapse; /* without this, a highlighted row has gaps between all cells */
+}
+tr:focus {
+	background: #3b3a41;
+	outline: none;
+}
+
+td>button.arrow {
+	padding: 0 8px;
+}
+.air_time {
+	min-width: 100px;
+}
+
+#edit_fields my-input {
+	min-width: 300px;
+}
+#edit_fields td {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+tr:first-child > td { padding-top: 0; }
+tr:last-child > td { padding-bottom: 0; }
+tr > td:first-child { padding-left: 0; }
+
+
+
+tr button u {
+	text-decoration-line: none;
+}
+tr:focus button u {
+	text-decoration-line: underline;
+}
+tr a {
+	text-decoration-line: none;
+}
+tr:focus a {
+	text-decoration-line: underline;
+}
+
+.episode_number {
+	min-width: max-content;
+}
+
+#edit_dialog:not([data-mode=add]) .add, 
+#edit_dialog:not([data-mode=edit]) .edit {
+	display: none;
+}
+
+.flash-fade {
+	animation: flash-fade 1.5s 1 ease-out;
+}
+@keyframes flash-fade {
+    from { background-color: white; }
+    to   {  }
+}

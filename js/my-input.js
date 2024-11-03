@@ -1,20 +1,20 @@
 
-class MyInput extends HTMLParagraphElement // must because it is a modified <p> element, change this if it is something else
-{
+class MyInput extends HTMLElement {
 	constructor() {
 		super(); 
 	}
 	
 	connectedCallback() {
 		this.contentEditable = true;
-		this.addEventListener("keydown", prevent_enter);
+		this.addEventListener("keydown", e => {
+			// do not insert newline characters into this input
+			if (e.code === "Enter") {
+				e.preventDefault(); 
+			}
+		});
 	}
 }
 
-function prevent_enter(e) {
-	if (e.code === "Enter") {
-		e.preventDefault();
-	}
-}
 
-customElements.define("my-input", MyInput, { extends: "p" });
+
+customElements.define("my-input", MyInput);
