@@ -29,7 +29,7 @@
 	<button id="export_button">Export data</button>
 </div>
 
-<dialog id="edit_dialog" data-mode="edit">
+<dialog id="edit_dialog" data-mode="edit" tabindex="-1">
 	<h2 class="edit">Edit</h2>
 	<h2 class="add">Add</h2>
 	<table id="edit_fields">
@@ -48,7 +48,7 @@
 	</form>
 </dialog>
 
-<dialog id="import_dialog">
+<dialog id="import_dialog" tabindex="-1">
 	<textarea style="width: 400px;height: 200px;"></textarea>
 	<form style="display:flex; justify-content: right; gap: 10px;" method="dialog">
 		<button class="paste">Load from clipboard</button>
@@ -57,7 +57,7 @@
 	</form>
 </dialog>
 
-<dialog id="export_dialog">
+<dialog id="export_dialog" tabindex="-1">
 	<textarea style="width: 400px;height: 200px;" disabled></textarea>
 	<form style="display:flex; justify-content: right; gap: 10px;" method="dialog">
 		<button class="copy">Copy to clipboard</button>
