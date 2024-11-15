@@ -122,10 +122,18 @@ class Anime { // json serializable
 			if (moving) {
 
 				if (moving !== this) {
-					list_elem.insertBefore(/*insert this*/moving.elem, /*before this*/this.elem);
+					const indexFrom = list.indexOf(moving);
+					const indexTo   = list.indexOf(this);
 
-					array_remove(list, list.indexOf(moving)); // remove the anime we're moving,
-					array_insert(list, list.indexOf(this), moving); // then insert it here
+					if (indexFrom > indexTo) {
+						list_elem.insertBefore(/*insert this*/moving.elem, /*before this*/this.elem);
+						array_remove(list, indexFrom);
+						array_insert(list, indexTo, moving);
+					} else /* indexFrom < indexTo */ {
+						insert_after(moving.elem, this.elem);
+						array_remove(list, indexFrom);
+						array_insert(list, indexTo+1, moving);
+					}
 
 					save_list();
 				}
@@ -345,6 +353,14 @@ function remove_children(elem) {
 	while (elem.lastChild) elem.lastChild.remove();
 }
 
+function insert_after(new_node, reference_node) { 
+	if (reference_node.nextSibling) { 
+		reference_node.parentNode.insertBefore(new_node, reference_node.nextSibling); 
+	} else { 
+		reference_node.parentNode.appendChild(new_node); 
+	} 
+}
+
 async function set_clipboard(text) {
 	// Retarded API.
 	// https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
@@ -390,7 +406,7 @@ function try_json_parse_array(json) /* [arr, err] */ {
 // main code
 //
 {
-	const err = load_list_from_json(await localStorage.getItem("show_list.list") ?? "[]");
+	const err = load_list_from_json(localStorage.getItem("show_list.list") ?? "[]");
 	if (err) {
 		alert(err);
 	}
