@@ -125,15 +125,11 @@ class Anime { // json serializable
 					const indexFrom = list.indexOf(moving);
 					const indexTo   = list.indexOf(this);
 
-					if (indexFrom > indexTo) {
-						list_elem.insertBefore(/*insert this*/moving.elem, /*before this*/this.elem);
-						array_remove(list, indexFrom);
-						array_insert(list, indexTo, moving);
-					} else /* indexFrom < indexTo */ {
-						insert_after(moving.elem, this.elem);
-						array_remove(list, indexFrom);
-						array_insert(list, indexTo+1, moving);
-					}
+					moving.elem.remove();
+					element_insert(list_elem, indexTo, moving.elem)
+
+					array_remove(list, indexFrom);
+					array_insert(list, indexTo, moving);
 
 					save_list();
 				}
@@ -353,12 +349,13 @@ function remove_children(elem) {
 	while (elem.lastChild) elem.lastChild.remove();
 }
 
-function insert_after(new_node, reference_node) { 
-	if (reference_node.nextSibling) { 
-		reference_node.parentNode.insertBefore(new_node, reference_node.nextSibling); 
-	} else { 
-		reference_node.parentNode.appendChild(new_node); 
-	} 
+function element_insert(parent, index, new_element) {
+	const children = parent.children;
+	if (index < children.length) {
+		parent.insertBefore(new_element, children[index]);
+	} else {
+		parent.appendChild(new_element);
+	}
 }
 
 async function set_clipboard(text) {
