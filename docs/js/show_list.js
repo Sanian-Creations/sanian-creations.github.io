@@ -1,14 +1,14 @@
 import "./my-input.js"; // import nothing, but ensures the custom component is loaded
 
-let moving = undefined; // anime which is currently being moved, or undefined if one is not being moved
+let moving = undefined; // tvshow which is currently being moved, or undefined if one is not being moved
 
 function pr(a) {
 	console.log(a);
 	return a;
 }
 
-const list_elem      = document.getElementById("list");
-const anime_template = document.getElementById("anime_template");
+const list_elem       = document.getElementById("list");
+const tvshow_template = document.getElementById("tvshow_template");
 
 const export_button      = document.getElementById("export_button");
 const export_dialog      = document.getElementById("export_dialog");
@@ -25,9 +25,9 @@ const edit_dialog    = document.getElementById("edit_dialog");
 const edit_fields    = edit_dialog.querySelector("#edit_fields");
 const edit_button_ok = edit_dialog.querySelector("button.ok");
 
-const new_anime_btn = document.getElementById("new_anime_button");
+const new_tvshow_btn = document.getElementById("new_tvshow_button");
 
-class Anime extends HTMLTableRowElement { // json serializable
+class TVShow extends HTMLTableRowElement { // json serializable
 	data;
 
 	constructor(in_data) {
@@ -40,7 +40,7 @@ class Anime extends HTMLTableRowElement { // json serializable
 		this.data.air_time ??= "";
 
 		this.setAttribute("tabindex", 0);
-		this.append(anime_template.content.cloneNode(true)); // true for deepcopy
+		this.append(tvshow_template.content.cloneNode(true)); // true for deepcopy
 		
 		this.update_all();
 		this.init_callbacks();
@@ -69,7 +69,7 @@ class Anime extends HTMLTableRowElement { // json serializable
 			} break;
 		}
 	}
-	
+
 	set(fieldname, val) {
 		this.data[fieldname] = val;
 		this.update(fieldname);
@@ -183,15 +183,15 @@ class Anime extends HTMLTableRowElement { // json serializable
 		return this.data;
 	}
 }
-customElements.define("my-anime", Anime, {extends: 'tr'});
+customElements.define("tv-show", TVShow, {extends: 'tr'});
 
 // TODO: make pressing enter in the input class switch focus to the next element
 
 //
-// Adding anime
+// Adding tvshows
 //
-new_anime_btn.addEventListener("click", function () {
-	const anime = new Anime();
+new_tvshow_btn.addEventListener("click", function () {
+	const tvshow = new TVShow();
 
 	const inputs = edit_fields.querySelectorAll(".field_input");
 	for (let i = 0; i < inputs.length; i++) {
@@ -200,20 +200,20 @@ new_anime_btn.addEventListener("click", function () {
 		// Every input has a data-field attribute that specifies which field that input is for
 		const field = input.dataset.field; 
 		if (input.constructor === HTMLInputElement) {
-			input.valueAsNumber = anime.data[field];
+			input.valueAsNumber = tvshow.data[field];
 		} else {
-			input.innerText = anime.data[field];
+			input.innerText = tvshow.data[field];
 		}
 	}
 
 	edit_button_ok.onclick = e => {
-		const ok = anime.set_from_inputs(inputs);
+		const ok = tvshow.set_from_inputs(inputs);
 		if (!ok) { e.preventDefault(); return; }
 
-		list_elem.append(anime);
+		list_elem.append(tvshow);
 		save_list();
 	
-		anime.focus();
+		tvshow.focus();
 	}
 	edit_dialog.dataset.mode = "add";
 	edit_dialog.showModal();
@@ -280,7 +280,7 @@ list_elem.addEventListener("keydown", e => {
 		case "ArrowUp": (document.activeElement.previousSibling ?? list_elem.lastChild)?.focus(); break;
 		case "ArrowDown": (document.activeElement.nextSibling ?? list_elem.firstChild)?.focus(); break;
 
-		case "KeyA": new_anime_btn.click(); break;
+		case "KeyA": new_tvshow_btn.click(); break;
 
 		case "Enter":      document.activeElement.querySelector(".title").click();      break;
 		case "ArrowLeft":  document.activeElement.querySelector(".prev_btn").click();   break;
@@ -324,8 +324,8 @@ function load_list_from_json(input_json) {
 
 	remove_children(list_elem); // only remove what was there if parsing was successful
 	for (let i = 0; i < arr.length; i++) {
-		const anime = new Anime(arr[i]);
-		list_elem.append(anime);
+		const tvshow = new TVShow(arr[i]);
+		list_elem.append(tvshow);
 	}
 
 	if (list_elem.firstChild) {
