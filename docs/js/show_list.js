@@ -1,7 +1,6 @@
 import "./my-input.js"; // import nothing, but ensures the custom component is loaded
 
 let moving = undefined; // anime which is currently being moved, or undefined if one is not being moved
-let list;
 
 function pr(a) {
 	console.log(a);
@@ -28,19 +27,21 @@ const edit_button_ok = edit_dialog.querySelector("button.ok");
 
 const new_anime_btn = document.getElementById("new_anime_button");
 
-class Anime { // json serializable
+class Anime extends HTMLTableRowElement { // json serializable
 	data;
-	elem;
 
 	constructor(in_data) {
+		super();
+
 		this.data = in_data ?? {};
 		this.data.episode_number ??= 1;
 		this.data.title ??= "";
 		this.data.link ??= "";
 		this.data.air_time ??= "";
 
-		this.elem = anime_template.content.cloneNode(true).children[0]; // true for deepcopy
-
+		this.setAttribute("tabindex", 0);
+		this.append(anime_template.content.cloneNode(true)); // true for deepcopy
+		
 		this.update_all();
 		this.init_callbacks();
 	}
@@ -48,25 +49,27 @@ class Anime { // json serializable
 	update_all() {
 		for (const field in this.data) { this.update(field); }
 	}
+
 	update(fieldname) {
 		switch (fieldname) {
 			case "title": {
-				this.elem.querySelector(".title").innerText = this.data.title;
+				this.querySelector(".title").innerText = this.data.title;
 			} break;
 			case "episode_number": 
-				this.elem.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
+				this.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
 				// FALLTHROUGH IS ACTUALLY USEFUL FOR ONCE HOLYYY
 			case "link": {
-				this.elem.querySelector(".title").href = generate_link(this.data.link, this.data.episode_number);
+				this.querySelector(".title").href = generate_link(this.data.link, this.data.episode_number);
 			} break;
 			case "air_time": {
-				this.elem.querySelector(".air_time").innerText = this.data.air_time;
+				this.querySelector(".air_time").innerText = this.data.air_time;
 			} break;
 			default: {
 				alert(`tried to set/update non existent field '${fieldname}'`);
 			} break;
 		}
 	}
+	
 	set(fieldname, val) {
 		this.data[fieldname] = val;
 		this.update(fieldname);
@@ -78,22 +81,22 @@ class Anime { // json serializable
 	}
 
 	init_callbacks() {
-		const next_btn   = this.elem.querySelector(".next_btn");
-		const prev_btn   = this.elem.querySelector(".prev_btn");
-		const edit_btn   = this.elem.querySelector(".edit_btn");
-		const move_btn   = this.elem.querySelector(".move_btn");
-		const remove_btn = this.elem.querySelector(".remove_btn");
+		const next_btn   = this.querySelector(".next_btn");
+		const prev_btn   = this.querySelector(".prev_btn");
+		const edit_btn   = this.querySelector(".edit_btn");
+		const move_btn   = this.querySelector(".move_btn");
+		const remove_btn = this.querySelector(".remove_btn");
 
 		next_btn  .addEventListener("click", e => { this.inc_episode_by(1);  save_list(); });
 		prev_btn  .addEventListener("click", e => { this.inc_episode_by(-1); save_list(); });
 		remove_btn.addEventListener("click", e => {
 			if (confirm(`Delete ${this.data.title}?`)) {
-				array_remove(list, list.indexOf(this));
+				this.remove();
 				save_list();
-				if (this.elem === document.activeElement) {
-					(this.elem.nextSibling ?? this.elem.previousSibling)?.focus();
+				if (this === document.activeElement) {
+					(this.nextSibling ?? this.previousSibling)?.focus();
 				}
-				this.elem.remove();
+				this.remove();
 			}
 		});
 		edit_btn.addEventListener("click", e => {
@@ -122,14 +125,10 @@ class Anime { // json serializable
 			if (moving) {
 
 				if (moving !== this) {
-					const indexFrom = list.indexOf(moving);
-					const indexTo   = list.indexOf(this);
+					const target_index = Array.prototype.indexOf.call(list_elem.children, this);
 
-					moving.elem.remove();
-					element_insert(list_elem, indexTo, moving.elem)
-
-					array_remove(list, indexFrom);
-					array_insert(list, indexTo, moving);
+					moving.remove();
+					element_insert(list_elem, target_index, moving);
 
 					save_list();
 				}
@@ -162,7 +161,7 @@ class Anime { // json serializable
 			}
 		});
 
-		this.elem.addEventListener("mouseenter", e => e.target.focus());
+		this.addEventListener("mouseenter", e => e.target.focus());
 	}
 
 	set_from_inputs(inputs) {
@@ -184,6 +183,7 @@ class Anime { // json serializable
 		return this.data;
 	}
 }
+customElements.define("my-anime", Anime, {extends: 'tr'});
 
 // TODO: make pressing enter in the input class switch focus to the next element
 
@@ -196,7 +196,9 @@ new_anime_btn.addEventListener("click", function () {
 	const inputs = edit_fields.querySelectorAll(".field_input");
 	for (let i = 0; i < inputs.length; i++) {
 		const input = inputs[i];
-		const field = input.dataset.field;
+
+		// Every input has a data-field attribute that specifies which field that input is for
+		const field = input.dataset.field; 
 		if (input.constructor === HTMLInputElement) {
 			input.valueAsNumber = anime.data[field];
 		} else {
@@ -208,11 +210,10 @@ new_anime_btn.addEventListener("click", function () {
 		const ok = anime.set_from_inputs(inputs);
 		if (!ok) { e.preventDefault(); return; }
 
-		list.push(anime);
+		list_elem.append(anime);
 		save_list();
 	
-		list_elem.append(anime.elem);
-		anime.elem.focus();
+		anime.focus();
 	}
 	edit_dialog.dataset.mode = "add";
 	edit_dialog.showModal();
@@ -222,7 +223,7 @@ new_anime_btn.addEventListener("click", function () {
 // Exporting
 //
 export_button.addEventListener("click", e => {
-	export_textarea.value = JSON.stringify(list);
+	export_textarea.value = JSON.stringify(Array.from(list_elem.children));
 	export_button_copy.classList.remove("flash-fade");
 	export_dialog.showModal();
 });
@@ -322,19 +323,18 @@ function load_list_from_json(input_json) {
 	if (err) return err;
 
 	remove_children(list_elem); // only remove what was there if parsing was successful
-	list = arr.map(data => {
-		const anime = new Anime(data);
-		list_elem.append(anime.elem);
-		return anime;
-	});
+	for (let i = 0; i < arr.length; i++) {
+		const anime = new Anime(arr[i]);
+		list_elem.append(anime);
+	}
 
-	if (list.length > 0) {
-		list[0].elem.focus();
+	if (list_elem.firstChild) {
+		list_elem.firstChild.focus();
 	}
 }
 
 function save_list() {
-	localStorage.setItem("show_list.list", JSON.stringify(list));
+	localStorage.setItem("show_list.list", JSON.stringify(Array.from(list_elem.children)));
 }
 
 function array_remove(arr, index) {
