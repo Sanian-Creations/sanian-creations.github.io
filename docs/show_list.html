@@ -38,7 +38,9 @@
 		<tr><td><label>Link</label> <span style="opacity: 50%; cursor: help;" title="Replace a part of your link with EPISODE_NUMBER, and it will automatically update that part of the clickable link every time you change the Ep. nr">🛈</span></td>
 			<td><my-input class="field_input" data-field="link"></my-input></td></tr>
 		<tr><td><label>Ep. nr</label></td>
-			<td><input class="field_input" type="number" data-field="episode_number" style="width:-moz-available;width:-webkit-fill-available;"></td></tr>
+			<td><input class="field_input" type="number" min="0" data-field="episode_number" style="width:-moz-available;width:-webkit-fill-available;"></td></tr>
+		<tr><td><label>Ep. total</label></td>
+			<td><input class="field_input" type="number" min="0" data-field="episode_total" style="width:-moz-available;width:-webkit-fill-available;"></td></tr>
 		<tr><td><label>Air time</label></td>
 			<td><my-input class="field_input" data-field="air_time"></my-input></td></tr>
 	</table>
@@ -72,6 +74,7 @@
 	<td><p class="air_time"></p></td>
 	<td><button class="prev_btn arrow" tabindex="-1"><u>🠈</u></button></td>
 	<td><p class="episode_number"></p></td>
+	<td><p class="episode_total"></p></td>
 	<td><button class="next_btn arrow" tabindex="-1"><u>🠊</u></button></td>
 	<td><p><a class="title" href="" target="_blank" tabindex="-1"></a></p></td>
 </template>

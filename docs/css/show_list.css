@@ -68,8 +68,8 @@ tr:focus a {
 	text-decoration-line: underline;
 }
 
-.episode_number {
-	min-width: max-content;
+.episode_number, .episode_total {
+	text-wrap: nowrap;
 }
 
 #edit_dialog:not([data-mode=add]) .add, 

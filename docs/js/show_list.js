@@ -35,6 +35,7 @@ class TVShow extends HTMLTableRowElement { // json serializable
 
 		this.data = in_data ?? {};
 		this.data.episode_number ??= 1;
+		this.data.episode_total ??= 0;
 		this.data.title ??= "";
 		this.data.link ??= "";
 		this.data.air_time ??= "";
@@ -54,6 +55,13 @@ class TVShow extends HTMLTableRowElement { // json serializable
 		switch (fieldname) {
 			case "title": {
 				this.querySelector(".title").innerText = this.data.title;
+			} break;
+			case "episode_total": {
+				const should_display = this.data.episode_total > 0;
+				this.visibility = should_display;
+				if (should_display) {
+					this.querySelector(".episode_total").innerText = `/ ${this.data.episode_total}`;
+				}
 			} break;
 			case "episode_number": 
 				this.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
