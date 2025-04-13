@@ -58,10 +58,9 @@ class TVShow extends HTMLTableRowElement { // json serializable
 			} break;
 			case "episode_total": {
 				const should_display = this.data.episode_total > 0;
-				this.visibility = should_display;
-				if (should_display) {
-					this.querySelector(".episode_total").innerText = `/ ${this.data.episode_total}`;
-				}
+				this.querySelector(".episode_total").innerText = should_display 
+					? `/ ${this.data.episode_total}` 
+					: "";
 			} break;
 			case "episode_number": 
 				this.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
