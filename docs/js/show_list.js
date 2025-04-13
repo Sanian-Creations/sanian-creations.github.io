@@ -410,7 +410,10 @@ function try_json_parse_array(json) /* [arr, err] */ {
 // main code
 //
 {
-	const err = load_list_from_json(localStorage.getItem("show_list.list") ?? "[]");
+	const json_data = localStorage.getItem("show_list.list") 
+			?? `[{"episode_number":3,"episode_total":12,"title":"Name of a show (click this)","link":"https://example.com/ep=EPISODE_NUMBER","air_time":"Sundays"}]`;
+
+	const err = load_list_from_json(json_data);
 	if (err) {
 		alert(err);
 	}
