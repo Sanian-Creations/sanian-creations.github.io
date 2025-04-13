@@ -75,3 +75,7 @@ my-input {
 	display: block;
 	word-wrap: anywhere;
 }
+
+li {
+	line-height: 1.6;
+}
