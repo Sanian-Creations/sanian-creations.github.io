@@ -2,6 +2,25 @@
 	font-size: 16px;
 	color: #fbfbfe;
 }
+
+html {
+	background-color: #1c1b22;
+}
+body {
+	font-family: sans-serif;
+
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 10px;
+
+	margin: 10px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
 button {
 	background: #2c2b32;
 	font-weight: bold;
@@ -18,17 +37,7 @@ button:hover:not([disabled]) {
 	background: #3b3a41;
 	cursor: pointer;
 }
-body {
-	background: #1c1b22;
-	font-family: sans-serif;
 
-	display: flex;
-	flex-direction: column;
-	align-items: start;
-	gap: 10px;
-
-	margin: 10px;
-}
 
 a {
 	color: #5daeff;

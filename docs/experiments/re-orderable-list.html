@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<link rel="stylesheet" href="/css/reset.css">
+<link rel="stylesheet" href="/css/default.css">
+<script type="module" src="/js/default.js"></script>
+	<style>
+		table {
+			border-collapse: separate; 
+			border-spacing: 5px;
+		}
+		td:not(:first-child) {
+			padding: 10px;
+			margin: 10px;
+			width: 100px;
+			border-radius: 5px;
+			background-color: #444;
+		}
+
+		[my-draggable] {
+			cursor: ns-resize;
+			width: 50px;
+			text-align: center;
+		}
+		[my-draggable]::before {
+			content: "";
+			color: red;
+			display: inline-block;
+			width: 25px;
+			height: 9px;
+			background-image: linear-gradient(#666 1px, transparent 0);
+			background-size: auto 4px;
+		}
+		tr.moving {
+			left: 5px;
+		}
+
+		/*
+		Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move 
+		along when you drag them, but at least you CAN have borders on tr elems...
+		But if you do 'border-collapse: separate', then you cannot have borders on tr, only on td 
+		*/
+
+		/* this is REQUIRED */
+		tr.moving {
+			position: relative;
+		}
+		[my-draggable] {
+			touch-action: none;
+		}
+
+	</style>
+</head>
+<body>
+	<a href="/">Back</a>
+	<table>
+		<thead>
+			<tr><th></th><th>Header</th></tr>
+		</thead>
+		<tbody>
+			<tr><td my-draggable></td><td style="height:50px">one</td></tr>
+			<tr><td my-draggable></td><td style="height:100px">two</td></tr>
+			<tr><td my-draggable></td><td style="height:150px">three</td></tr>
+			<tr><td my-draggable></td><td>four</td></tr>
+			<tr><td my-draggable></td><td>a </td></tr>
+			<tr><td my-draggable></td><td>b</td></tr>
+			<tr><td my-draggable></td><td>c</td></tr>
+			<tr><td my-draggable></td><td>d</td></tr>
+			<tr><td my-draggable></td><td>e</td></tr>
+			<tr><td my-draggable></td><td>f</td></tr>
+			<tr><td my-draggable></td><td>g</td></tr>
+			<tr><td my-draggable></td><td>h</td></tr>
+			<tr><td my-draggable></td><td>i</td></tr>
+		</tbody>
+	</table>
+	
+	<div style="min-height: 1000px"></div>
+	<script>
+		"use strict";
+
+		const container = document.querySelector("table>tbody");
+		let moving_row = null;
+		let moving_index = 0;
+		let initial_midpoint = 0;
+
+		let cursorPageY   = 0;
+		let cursorClientY = 0;
+
+		const drag = () => {
+
+			const rect = moving_row.getBoundingClientRect();
+			const half_height = rect.height/2;
+			const hovering_midpoint = cursorPageY;
+			let closest_row_index = moving_index;
+			let closest_dist =  Math.abs(hovering_midpoint - initial_midpoint);
+			let closest_midpoint;
+
+			const moving_up = hovering_midpoint < initial_midpoint;
+			const count = moving_up ? moving_index : container.children.length - moving_index - 1;
+
+			for (let i = 0; i < count; i++) {
+				const row_index = moving_up ? moving_index-1 - i : moving_index+1 + i;
+				const other_rect = container.children[row_index].getBoundingClientRect();
+				const midpoint = other_rect.y + window.scrollY + (moving_up ? half_height : other_rect.height - half_height);
+				const dist = Math.abs(hovering_midpoint - midpoint);
+				
+				if (dist < closest_dist) {
+					closest_dist = dist;
+					closest_row_index = row_index;
+					closest_midpoint = midpoint;
+				} else break;
+			}
+
+			if (closest_row_index !== moving_index) {
+				moving_row.remove();
+				element_insert(container, closest_row_index, moving_row);
+				moving_index = closest_row_index;
+				initial_midpoint = closest_midpoint;
+			}
+			update_hovering_position(container.children.length);
+		};
+		const on_move = e => {
+			cursorPageY = e.pageY;
+			cursorClientY = e.clientY;
+			drag();
+		}
+		const on_scroll = e => {
+			cursorPageY = cursorClientY + window.scrollY;
+			drag();
+		};
+		const on_up = e => {
+			if (e.button !== 0) return; // must be left click
+			container.releasePointerCapture(e.pointerId);
+			moving_row.classList.remove("moving");
+			moving_row.style.removeProperty("top");
+			moving_row = null;
+			container.removeEventListener("pointermove", on_move);
+			container.removeEventListener("pointerup", on_up);
+			window.removeEventListener("scroll", on_scroll);
+		}
+		container.addEventListener("pointerdown", e => {
+			if (e.button !== 0) return; // must be left-click, 
+			e.preventDefault(); // prevents text selection behaviour
+
+			let el = e.target.closest("[my-draggable]");
+			if (!container.contains(el) || el === container) return; // went too far
+			
+			while (el.parentNode !== container) {
+				el = el.parentNode;
+			}
+			moving_row = el;
+			moving_index = Array.prototype.indexOf.call(moving_row.parentNode.children, moving_row);
+
+			const rect = moving_row.getBoundingClientRect();
+			initial_midpoint = rect.y + window.scrollY + rect.height/2;
+			
+			// MUST do operations that change the style AFTER calling getBoundingClientRect!!
+			moving_row.classList.add("moving");
+
+			container.setPointerCapture(e.pointerId); // ensures we receive pointerup even if the pointer is outside the window, so you don't get that stupid thing where you stopped dragging but the thing is still attached to your pointer.
+			container.addEventListener("pointermove", on_move);
+			container.addEventListener("pointerup", on_up);
+			window.addEventListener("scroll", on_scroll);
+			on_move(e);
+		});
+
+		// right clicking whilst dragging breaks the system, so disable that.
+		container.addEventListener("contextmenu", e => { if (moving_row) e.preventDefault(); });
+
+		function element_insert(parent, index, new_element) {
+			if (index < parent.children.length) {
+				parent.insertBefore(new_element, parent.children[index]);
+			} else {
+				parent.appendChild(new_element);
+			}
+		}
+		function update_hovering_position(child_count) {
+			let offset = cursorPageY - initial_midpoint;
+			if (moving_index === child_count-1) offset = Math.min(offset, 0);
+			if (moving_index === 0) offset = Math.max(offset, 0);
+			moving_row.style.top = `${offset}px`;
+		}
+
+		// TODO: maybe make this a single webpage on my site just to single out this behaviour and showcase it.
+		// it would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser 
+		// whilst updating the content of an iframe to show you what it does. But that may be a bit out of my league.
+	</script>
+</body>
+</html>

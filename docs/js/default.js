@@ -1,6 +1,6 @@
 // make backdrop clicks close their corresponding dialog.
 let mousedown_x, mousedown_y;
-document.addEventListener('mousedown', e => {
+document.addEventListener("mousedown", e => {
 	mousedown_x = e.clientX;
 	mousedown_y = e.clientY;
 });

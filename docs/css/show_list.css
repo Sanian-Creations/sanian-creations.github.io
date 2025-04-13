@@ -1,6 +1,6 @@
 body {
-    display: flex; 
-    align-items: center;
+	display: flex; 
+	align-items: center;
 }
 
 a.title {
@@ -16,7 +16,7 @@ a.title {
 #list tr { height: 0px; }
 #list td { height: inherit; }
 @supports (-moz-appearance:none) { /* ff specific override, doesn't work with inherit but does with 100% */
-    #list td { height: 100%; }
+	#list td { height: 100%; }
 }
 #list td > button { height: 100%; }
 
@@ -26,9 +26,6 @@ td {
 	padding: 2px;
 }
 
-table {
-	border-collapse: collapse; /* without this, a highlighted row has gaps between all cells */
-}
 tr:focus {
 	background: #3b3a41;
 	outline: none;
@@ -81,6 +78,6 @@ tr:focus a {
 	animation: flash-fade 1.5s 1 ease-out;
 }
 @keyframes flash-fade {
-    from { background-color: white; }
-    to   {  }
+	from { background-color: white; }
+	to   {  }
 }
