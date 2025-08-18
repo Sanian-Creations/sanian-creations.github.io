@@ -133,12 +133,21 @@
 		};
 		const on_up = e => {
 			if (e.button !== 0) return; // must be left click
+			stop_move(e);
+		};
+		const on_cancel = e => {
+			document.body.style.backgroundColor = "#550000";
+			setTimeout(()=>document.body.style.removeProperty("background-color"), 200);
+			stop_move(e);
+		};
+		const stop_move = e => {
 			container.releasePointerCapture(e.pointerId);
 			moving_row.classList.remove("moving");
 			moving_row.style.removeProperty("top");
 			moving_row = null;
 			container.removeEventListener("pointermove", on_move);
 			container.removeEventListener("pointerup", on_up);
+			container.removeEventListener("pointercancel", on_cancel);
 			window.removeEventListener("scroll", on_scroll);
 		}
 		container.addEventListener("pointerdown", e => {
@@ -161,8 +170,10 @@
 			moving_row.classList.add("moving");
 
 			container.setPointerCapture(e.pointerId); // ensures we receive pointerup even if the pointer is outside the window, so you don't get that stupid thing where you stopped dragging but the thing is still attached to your pointer.
+
 			container.addEventListener("pointermove", on_move);
 			container.addEventListener("pointerup", on_up);
+			container.addEventListener("pointercancel", on_cancel);
 			window.addEventListener("scroll", on_scroll);
 			on_move(e);
 		});
