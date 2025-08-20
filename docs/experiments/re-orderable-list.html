@@ -17,6 +17,7 @@
 			margin: 10px;
 			width: 100px;
 			border-radius: 5px;
+			border: 1px solid black;
 			background-color: #444;
 		}
 
@@ -45,17 +46,17 @@
 		*/
 
 		/* this is REQUIRED */
-		tr.moving {
-			position: relative;
-		}
 		[my-draggable] {
-			touch-action: none;
+			touch-action: none; /* could maaybe do this dynamically...? or maybe add it in .moving, but idk if we add that class too late */
 		}
 
 	</style>
 </head>
 <body>
 	<a href="/">Back</a>
+	<div id="redline" style="width: 100px; height: 2px; position: fixed; z-index: 9999; background-color: red;"></div>
+	<div id="greenline" style="width: 100px; height: 2px; position: fixed; z-index: 9999; background-color: green;"></div>
+	<div id="blueline" style="width: 100px; height: 2px; position: fixed; z-index: 9999; background-color: aqua;"></div>
 	<table>
 		<thead>
 			<tr><th></th><th>Header</th></tr>
@@ -80,120 +81,160 @@
 	<div style="min-height: 1000px"></div>
 	<script>
 		"use strict";
+		const redline = document.querySelector("#redline");
+		const greenline = document.querySelector("#greenline");
+		const blueline = document.querySelector("#blueline");
 
-		const container = document.querySelector("table>tbody");
-		let moving_row = null;
-		let moving_index = 0;
-		let initial_midpoint = 0;
+		make_reorderable(document.querySelector("table>tbody"), "[my-draggable]");
 
-		let cursorPageY   = 0;
-		let cursorClientY = 0;
+		// Assumes the elements in the container are displayed top-to-bottom.
+		/**
+		 * @param {HTMLElement} container - the container of which the children get click-and-drag reordering.
+		 * @param {?string} move_handle_selector - optional selector for move handles, without this children of container can be click/dragged wherever you click them.
+		 */
+		function make_reorderable(container, move_handle_selector) {
+			document.createDocumentFragment().querySelector(move_handle_selector); // Run the selector on something to ensure it is valid.
 
-		const drag = () => {
+			const moving_elems = new Set();
+			// TODO: handle_selector can be undefined and then it should work with whatever.
+			container.addEventListener("pointerdown", e => {
+				if (e.button !== 0) return; // left-clicks only
+				if (e.target === container) return; // must at least be a child of the container
 
-			const rect = moving_row.getBoundingClientRect();
-			const half_height = rect.height/2;
-			const hovering_midpoint = cursorPageY;
-			let closest_row_index = moving_index;
-			let closest_dist =  Math.abs(hovering_midpoint - initial_midpoint);
-			let closest_midpoint;
+				// Walk up parents of e.target to find the one that is a direct child of container, that one is the element that gets moved.
+				// Meanwhile, check that e.target or one of its parents matches the selector of a move handle.
+				let elem = e.target;
+				let clicked_handle = !move_handle_selector || elem.matches(move_handle_selector);
+				while (elem.parentElement !== container) {
+					elem = elem.parentElement;
+					if (!clicked_handle && elem.matches(move_handle_selector)) clicked_handle = true;
+				}
 
-			const moving_up = hovering_midpoint < initial_midpoint;
-			const count = moving_up ? moving_index : container.children.length - moving_index - 1;
+				if (!clicked_handle) return;
+				if (moving_elems.has(elem)) return; // don't move the same element with two fingers...
 
-			for (let i = 0; i < count; i++) {
-				const row_index = moving_up ? moving_index-1 - i : moving_index+1 + i;
-				const other_rect = container.children[row_index].getBoundingClientRect();
-				const midpoint = other_rect.y + window.scrollY + (moving_up ? half_height : other_rect.height - half_height);
-				const dist = Math.abs(hovering_midpoint - midpoint);
+				// Now that we know for sure we're moving this element...
+				e.preventDefault(); // stops text selection
+
+				const action = new MoveAction();
+				action.init(container, elem, e.pointerId, e.clientY, moving_elems);
+			});
+		}
+
+		class MoveAction {
+		/** @type { HTMLElement } */ container;
+		/** @type { HTMLElement } */ elem;
+		/** @type { Number } */ pointerId;
+		/** @type { Number } */ current_index;
+		/** @type { Number } */ hover_offset;
+		/** @type { Number } */ hover_pos;
+		/** @type { AbortController } */ abort_controller;
+		/** @type { Set<HTMLElement> } */ moving_elems;
+
+			init(container, elem, pointerId, hover_pos, moving_elems) {
+				this.container = container;
+				this.elem = elem;
+				this.pointerId = pointerId;
+				this.moving_elems = moving_elems;
+				this.hover_offset = 0;
+				this.hover_pos = hover_pos;
 				
-				if (dist < closest_dist) {
-					closest_dist = dist;
-					closest_row_index = row_index;
-					closest_midpoint = midpoint;
-				} else break;
+				this.current_index = Array.prototype.indexOf.call(this.container.children, this.elem);
+				if (this.current_index === -1) throw new Error("this.elem should be a direct child of container");
+				
+				this.moving_elems.add(this.elem);
+				this.elem.classList.add("moving");
+
+				this.abort_controller = new AbortController();
+
+				const opts = { signal: this.abort_controller.signal };
+
+				this.container.setPointerCapture(this.pointerId);
+				this.container.addEventListener("pointermove", this, opts);
+				this.container.addEventListener("pointerup", this, opts);
+				this.container.addEventListener("pointercancel", this, opts);
+				this.container.addEventListener("contextmenu", this, opts);
+				window.addEventListener("scroll", this, opts);
+
+				this.move();
 			}
 
-			if (closest_row_index !== moving_index) {
-				moving_row.remove();
-				element_insert(container, closest_row_index, moving_row);
-				moving_index = closest_row_index;
-				initial_midpoint = closest_midpoint;
+			handleEvent(e) {
+				if (e.pointerId !== undefined && e.pointerId !== this.pointerId) return;
+
+				switch (e.type) {
+					case "pointermove":   this.hover_pos = e.clientY; // fallthrough!
+					case "scroll":        this.move();                    break;
+					case "pointercancel": this.stop_moving();             break;
+					case "pointerup":     this.stop_moving();             break;
+					case "contextmenu":   e.preventDefault();             break;
+				}
 			}
-			update_hovering_position(container.children.length);
-		};
-		const on_move = e => {
-			cursorPageY = e.pageY;
-			cursorClientY = e.clientY;
-			drag();
+
+			stop_moving() {
+				this.container.releasePointerCapture(this.pointerId);
+
+				this.moving_elems.delete(this.elem);
+				this.elem.classList.remove("moving");
+				this.elem.style.removeProperty("transform");
+
+				this.abort_controller.abort();
+			}
+
+			move() {
+				const mybounds = this.elem.getBoundingClientRect();
+				const half = mybounds.height/2;
+				let base_pos = mybounds.y - this.hover_offset + half;
+				redline.style.top = this.hover_pos + "px";
+				blueline.style.top = base_pos + "px";
+							
+				let closest_index = this.current_index;
+				let closest_dist =  Math.abs(this.hover_pos - base_pos);
+				let closest_base_pos;
+
+				const moving_up = this.hover_pos < base_pos;
+				const count = moving_up ? this.current_index : this.container.children.length - this.current_index - 1;
+
+				for (let i = 0; i < count; i++) {
+					const other_index = moving_up ? this.current_index-1 - i : this.current_index+1 + i; // this.current_index + (1 + i) * (moving_up ? -1 : 1)
+					const other_elem = this.container.children[other_index];
+					const other_bounds = other_elem.getBoundingClientRect();
+					const other_pos = other_bounds.y + (moving_up ? half : other_bounds.height - half);
+					if (i === 0) greenline.style.top = other_pos + "px";
+					const dist = Math.abs(this.hover_pos - other_pos);
+
+					if (dist < closest_dist) {
+						closest_dist = dist;
+						closest_index = other_index;
+						closest_base_pos = other_pos;
+					} else break;
+				}
+
+				if (closest_index !== this.current_index) {
+					this.elem.remove();
+					insert_element(this.container, closest_index, this.elem);
+					this.current_index = closest_index;
+					base_pos = closest_base_pos;
+				}
+				
+				let offset = this.hover_pos - base_pos;
+				if (this.current_index === this.container.children.length-1) 
+					offset = Math.min(offset, 0);
+				if (this.current_index === 0) 
+					offset = Math.max(offset, 0);
+				this.elem.style.transform = `translate(0, ${offset}px)`;
+				this.hover_offset = offset;
+			}
 		}
-		const on_scroll = e => {
-			cursorPageY = cursorClientY + window.scrollY;
-			drag();
-		};
-		const on_up = e => {
-			if (e.button !== 0) return; // must be left click
-			stop_move(e);
-		};
-		const on_cancel = e => {
-			document.body.style.backgroundColor = "#550000";
-			setTimeout(()=>document.body.style.removeProperty("background-color"), 200);
-			stop_move(e);
-		};
-		const stop_move = e => {
-			container.releasePointerCapture(e.pointerId);
-			moving_row.classList.remove("moving");
-			moving_row.style.removeProperty("top");
-			moving_row = null;
-			container.removeEventListener("pointermove", on_move);
-			container.removeEventListener("pointerup", on_up);
-			container.removeEventListener("pointercancel", on_cancel);
-			window.removeEventListener("scroll", on_scroll);
-		}
-		container.addEventListener("pointerdown", e => {
-			if (e.button !== 0) return; // must be left-click, 
-			e.preventDefault(); // prevents text selection behaviour
 
-			let el = e.target.closest("[my-draggable]");
-			if (!container.contains(el) || el === container) return; // went too far
-			
-			while (el.parentNode !== container) {
-				el = el.parentNode;
-			}
-			moving_row = el;
-			moving_index = Array.prototype.indexOf.call(moving_row.parentNode.children, moving_row);
-
-			const rect = moving_row.getBoundingClientRect();
-			initial_midpoint = rect.y + window.scrollY + rect.height/2;
-			
-			// MUST do operations that change the style AFTER calling getBoundingClientRect!!
-			moving_row.classList.add("moving");
-
-			container.setPointerCapture(e.pointerId); // ensures we receive pointerup even if the pointer is outside the window, so you don't get that stupid thing where you stopped dragging but the thing is still attached to your pointer.
-
-			container.addEventListener("pointermove", on_move);
-			container.addEventListener("pointerup", on_up);
-			container.addEventListener("pointercancel", on_cancel);
-			window.addEventListener("scroll", on_scroll);
-			on_move(e);
-		});
-
-		// right clicking whilst dragging breaks the system, so disable that.
-		container.addEventListener("contextmenu", e => { if (moving_row) e.preventDefault(); });
-
-		function element_insert(parent, index, new_element) {
+		function insert_element(parent, index, elem) {
 			if (index < parent.children.length) {
-				parent.insertBefore(new_element, parent.children[index]);
+				parent.insertBefore(elem, parent.children[index]);
 			} else {
-				parent.appendChild(new_element);
+				parent.appendChild(elem);
 			}
 		}
-		function update_hovering_position(child_count) {
-			let offset = cursorPageY - initial_midpoint;
-			if (moving_index === child_count-1) offset = Math.min(offset, 0);
-			if (moving_index === 0) offset = Math.max(offset, 0);
-			moving_row.style.top = `${offset}px`;
-		}
+
 
 		// TODO: maybe make this a single webpage on my site just to single out this behaviour and showcase it.
 		// it would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser 
