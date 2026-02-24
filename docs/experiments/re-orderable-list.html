@@ -21,12 +21,12 @@
 			background-color: #444;
 		}
 
-		#my-reorderable td:first-child {
+		#my-reorderable>tr>td:first-child {
 			cursor: ns-resize;
 			width: 50px;
 			text-align: center;
 		}
-		#my-reorderable td:first-child::before {
+		#my-reorderable>tr>td:first-child::before {
 			content: "";
 			color: red;
 			display: inline-block;
@@ -36,7 +36,6 @@
 			background-size: auto 4px;
 		}
 
-
 		/*
 		Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move 
 		along when you drag them, but at least you CAN have borders on tr elems...
@@ -44,14 +43,13 @@
 		*/
 
 		/* this is REQUIRED for mobile to work properly */
-		[my-draggable] {
+		#my-reorderable>tr>td:first-child {
 			touch-action: none; /* could maaybe do this dynamically...? or maybe add it in .moving, but idk if we add that class too late */
 		}
 		.moving {
 			z-index: 1000; /*with animations below, some elems will shortly go in front of the moving one */
 			position: relative; /*otherwise z-index does nothing*/
 		}
-
 	</style>
 </head>
 <body>
@@ -95,6 +93,7 @@
 		 */
 		function make_reorderable(container, move_handle_selector) {
 			document.createDocumentFragment().querySelector(move_handle_selector); // Run the selector on something to ensure it is valid.
+
 
 			container.addEventListener("pointerdown", e => {
 				if (e.button !== 0) return; // left-clicks only
@@ -195,7 +194,7 @@
 				const count = moving_up ? this.current_index : this.container.children.length - this.current_index - 1;
 
 				const passed_elems = [];
-				const passed_y = [];
+				const old_positions = [];
 				for (let i = 0; i < count; i++) {
 					const other_index = this.current_index + (1 + i) * dir;
 					const other_elem = this.container.children[other_index];
@@ -209,7 +208,7 @@
 						closest_index = other_index;
 						closest_base_pos = other_pos;
 						passed_elems.push(other_elem);
-						passed_y.push(other_bounds.y);
+						old_positions.push(other_bounds.y);
 					} else break;
 				}
 
@@ -222,9 +221,9 @@
 
 				for (let i = 0; i < passed_elems.length; i++) {
 					const el = passed_elems[i];
-					const dy = passed_y[i] - el.getBoundingClientRect().y;
+					const offset_to_old_pos = old_positions[i] - el.getBoundingClientRect().y;
 
-					el.style.transform = `translate(0, ${dy}px)`;
+					el.style.transform = `translate(0, ${offset_to_old_pos}px)`;
 					el.offsetHeight; // reflow
 					el.style.transition = "100ms ease"; // if you slow this down it's actually super buggy, but at 100ms it's really not noticable at all
 					el.style.transform = "";
