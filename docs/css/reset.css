@@ -141,8 +141,8 @@
 	margin: 0;
 }
 
-[hidden] {
-  display: none !important !important; /* double important so that if you apply a display to something with !important, it will still remain hidden if it has the hidden attribute */
+[hidden]:not(#a#b#c#d#e) { /* :not() selector boosts specificity so that user styles won't override this */
+  display: none !important;
 }
 
 :where(p, blockquote, pre,
