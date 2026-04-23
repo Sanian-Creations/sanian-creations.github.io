@@ -6,16 +6,16 @@
 
 <link rel="stylesheet" href="/css/reset.css">
 <link rel="stylesheet" href="/css/default.css">
-<script type="module" src="/js/default.js"></script>
+<script src="/js/default.js"></script>
 	<style>
 		table {
-			border-collapse: separate; 
+			border-collapse: separate;
 			border-spacing: 5px;
 		}
 		td:not(:first-child) {
 			padding: 10px;
 			margin: 10px;
-			width: 100px;
+			width: 150px;
 			border-radius: 5px;
 			border: 1px solid black;
 			background-color: #444;
@@ -37,9 +37,9 @@
 		}
 
 		/*
-		Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move 
+		Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move
 		along when you drag them, but at least you CAN have borders on tr elems...
-		But if you do 'border-collapse: separate', then you cannot have borders on tr, only on td 
+		But if you do 'border-collapse: separate', then you cannot have borders on tr, only on td
 		*/
 
 		/* this is REQUIRED for mobile to work properly */
@@ -52,18 +52,13 @@
 		}
 	</style>
 </head>
-<body>
-	<a href="/">Back</a>
+<body style="min-height: 150vh; justify-content: start;">
+	<div class="flex-r gap align-i-c"><a href="/" class="button">🠈</a><h1>Re-orderable list</h1></div>
+
 	<table>
-		<thead>
-			<tr><th></th><th>Header</th></tr>
-		</thead>
 		<tbody id="my-reorderable">
-			<tr><td></td><td style="height:50px">one</td></tr>
-			<tr><td></td><td style="height:100px">two</td></tr>
-			<tr><td></td><td style="height:150px">three</td></tr>
-			<tr><td></td><td>four</td></tr>
-			<tr><td></td><td>a </td></tr>
+			<tr><td></td><td>Re-order me!</td></tr>
+			<tr><td></td><td>a</td></tr>
 			<tr><td></td><td>b</td></tr>
 			<tr><td></td><td>c</td></tr>
 			<tr><td></td><td>d</td></tr>
@@ -72,10 +67,17 @@
 			<tr><td></td><td>g</td></tr>
 			<tr><td></td><td>h</td></tr>
 			<tr><td></td><td>i</td></tr>
+			<tr><td></td><td>j</td></tr>
+			<tr><td></td><td style="height:100px">Try scrolling,</td></tr>
+			<tr><td></td><td style="height:100px">whilst holding</td></tr>
+			<tr><td></td><td style="height:100px">an item!</td></tr>
+			<tr><td></td><td>k</td></tr>
+			<tr><td></td><td>l</td></tr>
+			<tr><td></td><td>m</td></tr>
 		</tbody>
 	</table>
-	
-	<div style="min-height: 1000px"></div>
+	<p hidden id="secret-message">Most interactive lists can't do that!</p>
+
 	<script>
 		"use strict";
 
@@ -134,10 +136,10 @@
 				this.pointerId = pointerId;
 				this.hover_offset = 0;
 				this.hover_pos = hover_pos;
-				
+
 				this.current_index = Array.prototype.indexOf.call(this.container.children, this.elem);
 				if (this.current_index === -1) throw new Error("this.elem should be a direct child of container");
-				
+
 				this.elem.classList.add("moving");
 				this.elem.style.transition = "";
 
@@ -159,8 +161,8 @@
 				if (e.pointerId !== undefined && e.pointerId !== this.pointerId) return;
 
 				switch (e.type) {
-					case "pointermove":   this.hover_pos = e.clientY; // fallthrough!
-					case "scroll":        this.move();        break;
+					case "pointermove":   this.hover_pos = e.clientY; this.move(); break;
+					case "scroll":        this.move(); maybe_show_secret(); break;
 					case "pointercancel": this.stop_moving(); break;
 					case "pointerup":     this.stop_moving(); break;
 					case "contextmenu":   e.preventDefault(); break;
@@ -184,7 +186,7 @@
 				const mybounds = this.elem.getBoundingClientRect();
 				const half = mybounds.height/2;
 				let base_pos = mybounds.y - this.hover_offset + half;
-							
+
 				let closest_index = this.current_index;
 				let closest_dist =  Math.abs(this.hover_pos - base_pos);
 				let closest_base_pos;
@@ -230,7 +232,7 @@
 
 					el.addEventListener("transitionend", stop_transition, opts_once);
 				}
-				
+
 				let offset = this.hover_pos - base_pos;
 				if (this.current_index === 0) {
 					offset = Math.max(offset, 0);
@@ -250,10 +252,13 @@
 			}
 		}
 
+		function maybe_show_secret() {
+			$("#secret-message").removeAttribute("hidden")
+		}
 
 
-		// TODO: maybe make this a single webpage on my site just to single out this behaviour and showcase it.
-		// it would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser 
+		// TODO:
+		// It would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser
 		// whilst updating the content of an iframe to show you what it does. But that may be a bit out of my league.
 	</script>
 </body>

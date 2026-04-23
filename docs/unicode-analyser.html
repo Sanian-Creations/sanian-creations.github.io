@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+
+	<link rel="stylesheet" href="css/reset.css">
+	<link rel="stylesheet" href="css/default.css">
+	<script src="js/default.js"></script>
+	<style>
+#analyser {
+	width: 600px;
+	resize: vertical;
+}
+#list {
+	display: grid;
+	grid-template-columns: auto 1fr auto auto;
+	grid-column-gap: 3rem;
+	min-height: 55vh;
+	min-width: 600px;
+	grid-auto-rows: max-content;
+}
+.u-char {
+	font-size: 1.5rem;
+	min-width: 2em;
+	text-align: center;
+}
+.u-code {
+	font-family: monospace;
+}
+.row {
+	padding: 2px 10px;
+	display: grid;
+	grid-column: 1 / -1; /* span all columns */
+	grid-template-columns: subgrid;
+	align-items: center;
+	&:hover {
+		background-color: #3b3a41;
+	}
+	&:where(:nth-child(2n+1)) {
+		background-color: #ffffff07;
+	}
+}
+	</style>
+</head>
+
+<body>
+	<div class="flex-r gap align-i-c"><a href="/" class="button">🠈</a><h1>Unicode Analyzer</h1></div>
+	<textarea id="analyser" placeholder="Type here"></textarea>
+	<div class="flex-r gap">
+		<label><input id="unique-checkbox" type="checkbox"> Only list unique chars</label>
+		<label><input id="sort-checkbox" type="checkbox"> Sort</label>
+	</div>
+	<div id="list"></div>
+	<template id="list-item">
+		<div class="row">
+			<div class="u-char"></div>
+			<div class="u-name"></div>
+			<div class="u-code"></div>
+			<div class="u-cat"></div>
+		</div>
+	</template>
+	<script>(async () => {
+// https://unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
+// https://unicode.org/reports/tr44/#UnicodeData.txt
+
+/*
+	0        1                      2      3   4   5   6  7  8  9  10   11   12     13     14
+code   name                     gcat  ccc   bc  dt  dm nt nv bm u1n  ic   upp    low    tit
+0000 ; <control>              ; Cc  ;  0  ; BN ;  ;  ;  ;  ; N ; NULL ; ;      ;      ;
+0042 ; LATIN CAPITAL LETTER B ; Lu  ;  0  ; L  ;  ;  ;  ;  ; N ;      ; ;      ; 0062 ;
+0062 ; LATIN SMALL LETTER B   ; Ll  ;  0  ; L  ;  ;  ;  ;  ; N ;      ; ; 0042 ;      ; 0042
+
+00 code
+01 name
+02 general category
+03 canonical combining class
+04 bidi class
+05 decomposition type
+06 decomposition mapping
+07 numeric type
+08 numeric value
+09 bidi mirrored
+10 unicode 1 name
+11 iso comment
+12 simple uppercase mapping
+13 simple lowercase mapping
+14 simple titlecase mapping
+*/
+const tmpl = $("#list-item");
+const list = $("#list");
+const analyser = $("#analyser");
+const unique_checkbox = $("#unique-checkbox");
+const sort_checkbox = $("#sort-checkbox");
+const empty_category_value = { name: "", info: "" };
+const general_category_values = { // https://unicode.org/reports/tr44/#GC_Values_Table
+	"Lu": { name: "Uppercase Letter", info: "An uppercase letter" },
+	"Ll": { name: "Lowercase Letter", info: "A lowercase letter" },
+	"Lt": { name: "Titlecase Letter", info: "A digraph encoded as a single character, with first part uppercase" },
+	"LC": { name: "Cased Letter", info: "Lu | Ll | Lt" },
+	"Lm": { name: "Modifier Letter", info: "A modifier letter" },
+	"Lo": { name: "Other Letter", info: "Other letters, including syllables and ideographs" },
+	"L": { name: "Letter", info: "Lu | Ll | Lt | Lm | Lo" },
+	"Mn": { name: "Nonspacing Mark", info: "A nonspacing combining mark (zero advance width)" },
+	"Mc": { name: "Spacing Mark", info: "A spacing combining mark (positive advance width)" },
+	"Me": { name: "Enclosing Mark", info: "An enclosing combining mark" },
+	"M": { name: "Mark", info: "Mn | Mc | Me" },
+	"Nd": { name: "Decimal Number", info: "A decimal digit" },
+	"Nl": { name: "Letter Number", info: "A letterlike numeric character" },
+	"No": { name: "Other Number", info: "A numeric character of other type" },
+	"N": { name: "Number", info: "Nd | Nl | No" },
+	"Pc": { name: "Connector Punctuation", info: "A connecting punctuation mark, like a tie" },
+	"Pd": { name: "Dash Punctuation", info: "A dash or hyphen punctuation mark" },
+	"Ps": { name: "Open Punctuation", info: "An opening punctuation mark (of a pair)" },
+	"Pe": { name: "Close Punctuation", info: "A closing punctuation mark (of a pair)" },
+	"Pi": { name: "Initial Punctuation", info: "An initial quotation mark" },
+	"Pf": { name: "Final Punctuation", info: "A final quotation mark" },
+	"Po": { name: "Other Punctuation", info: "A punctuation mark of other type" },
+	"P": { name: "Punctuation", info: "Pc | Pd | Ps | Pe | Pi | Pf | Po" },
+	"Sm": { name: "Math Symbol", info: "A symbol of mathematical use" },
+	"Sc": { name: "Currency Symbol", info: "A currency sign" },
+	"Sk": { name: "Modifier Symbol", info: "A non-letterlike modifier symbol" },
+	"So": { name: "Other Symbol", info: "A symbol of other type" },
+	"S": { name: "Symbol", info: "Sm | Sc | Sk | So" },
+	"Zs": { name: "Space Separator", info: "A space character (of various non-zero widths)" },
+	"Zl": { name: "Line Separator", info: "U+2028 LINE SEPARATOR only" },
+	"Zp": { name: "Paragraph Separator", info: "U+2029 PARAGRAPH SEPARATOR only" },
+	"Z": { name: "Separator", info: "Zs | Zl | Zp" },
+	"Cc": { name: "Control", info: "A C0 or C1 control code" },
+	"Cf": { name: "Format", info: "A format control character" },
+	"Cs": { name: "Surrogate", info: "A surrogate code point" },
+	"Co": { name: "Private Use", info: "A private-use character" },
+	"Cn": { name: "Unassigned", info: "A reserved unassigned code point or a noncharacter" },
+	"C": { name: "Other", info: "Cc | Cf | Cs | Co | Cn" },
+};
+const unicodemap = {};
+const ranges = [];
+{
+	const rangeFirstIndicator = ", First>";
+	const res = await fetch('/resources/UnicodeData.txt');
+	const text = await res.text();
+	const lines = text.split('\n');
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		if (line == "") continue;
+		const udata = line.split(';');
+		const udata_name = udata[1];
+		if (udata_name.endsWith(rangeFirstIndicator)) {
+			const udata2 = lines[++i].split(';');
+			ranges.push({
+				start: parseHex(udata[0]),
+				end: parseHex(udata2[0]),
+				name: udata_name.slice(1, udata_name.length - rangeFirstIndicator.length),
+				udata: udata,
+			});
+			continue;
+		}
+		unicodemap[parseHex(udata[0])] = udata;
+	}
+}
+function getUnicodeData(char) {
+	const codePoint = char.codePointAt(0);
+	const udata = unicodemap[codePoint];
+	if (udata) return udata;
+
+	for (let i = 0; i < ranges.length; i++) {
+		const r = ranges[i];
+		if (codePoint >= r.start && codePoint <= r.end) {
+			const hexcode = codePointAsHex(codePoint);
+			return [
+				hexcode, `${r.name} (U+${hexcode})`,
+				r.udata[2], r.udata[3], r.udata[4], r.udata[5], r.udata[6], r.udata[7], r.udata[8], r.udata[9], r.udata[10], r.udata[11], r.udata[12], r.udata[13], r.udata[14],
+			];
+		}
+	}
+
+	return [
+		codePointAsHex(codePoint), "Unknown",
+		"", "", "", "", "", "", "", "", "", "", "", "", "",
+	];
+}
+function codePointAsHex(codePoint) {
+	return codePoint.toString(16).toUpperCase().padStart(4, "0");
+}
+function getName(udata) {
+	const name = udata[1];
+	if (name.startsWith("<")) return udata[10];
+	return name;
+}
+function getCode(udata) {
+	return udata[0];
+}
+function getCategoryInfo(udata) {
+	return general_category_values[udata[2]] ?? empty_category_value;
+}
+
+function parseHex(str) {
+	return parseInt(str, 16)
+}
+function sortChildren(parent, compareFn) {
+  const children = Array.from(parent.children);
+  children.sort(compareFn);
+  children.forEach(child => parent.appendChild(child));
+}
+const unique_set = new Set();
+function update(e) {
+	list.replaceChildren();
+
+	let chars = analyser.value;
+
+	if (unique_checkbox.checked) {
+		unique_set.clear();
+		for (let i = 0; i < chars.length; i++) {
+			unique_set.add(chars[i])
+		}
+		chars = Array.from(unique_set.values());
+	}
+
+	for (let i = 0; i < chars.length; i++) {
+		const c = chars[i];
+		const udata = getUnicodeData(c);
+		const frag = tmpl.content.cloneNode(true);
+		$(frag, '.u-char').textContent = c;
+		$(frag, '.u-code').textContent = "U+" + getCode(udata);
+		$(frag, '.u-name').textContent = getName(udata);
+		const cat_el = $(frag, '.u-cat');
+		const cat_val = getCategoryInfo(udata);
+		if (cat_val) {
+			cat_el.textContent = cat_val.name;
+			cat_el.title = cat_val.info;
+		}
+		list.append(frag);
+	}
+	if (sort_checkbox.checked) {
+		sortChildren(list, (a, b) => $(a, ".u-char").textContent.codePointAt(0) > $(b, ".u-char").textContent.codePointAt(0));
+	}
+}
+update(); // initial call if browser auto-filled values, like on refresh
+on("input", analyser, update);
+on("input", unique_checkbox, update)
+on("input", sort_checkbox, update)
+})();</script>
+</body>
+
+</html>

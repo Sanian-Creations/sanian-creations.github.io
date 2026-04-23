@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="css/reset.css">
 <link rel="stylesheet" href="css/default.css">
-<script type="module" src="js/default.js"></script>
+<script src="js/default.js"></script>
 
 <link rel="stylesheet" href="css/show_list.css">
 <script type="module" src="js/show_list.js"></script>
@@ -14,19 +14,17 @@
 </head>
 <body>
 
-<a href="/">Back</a>
-
-<h1>Currently Watching</h1>
-<table id="list"></table>
-
-<div>
-	<button id="new_tvshow_button"><u>A</u>dd a new show</button>
-	<p style="display: inline; font-size: 14px;"><i>All data is stored in localstorage</i></p>
-</div>
+<div class="flex-r gap align-i-c"><a href="/" class="button">🠈</a><h1>Currently Watching</h1></div>
 
 <div>
 	<button id="import_button">Import data</button>
 	<button id="export_button">Export data</button>
+	<button id="new_tvshow_button" style="margin-left:50px;"><u>A</u>dd a new show</button>
+	<p style="display: inline; font-size: 14px;"><i>All data is stored in localstorage</i></p>
+</div>
+
+<div style="min-height:57vh;">
+	<table id="list"></table>
 </div>
 
 <dialog id="edit_dialog" data-mode="edit" tabindex="-1">
