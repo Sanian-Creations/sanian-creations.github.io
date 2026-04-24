@@ -25,9 +25,13 @@
 	font-size: 1.5rem;
 	min-width: 2em;
 	text-align: center;
+	padding: 0;
+	white-space: pre;
 }
 .u-code {
+	text-align: start;
 	font-family: monospace;
+	&::before { content: "U+"; }
 }
 .row {
 	padding: 2px 10px;
@@ -35,9 +39,6 @@
 	grid-column: 1 / -1; /* span all columns */
 	grid-template-columns: subgrid;
 	align-items: center;
-	&:hover {
-		background-color: #3b3a41;
-	}
 	&:where(:nth-child(2n+1)) {
 		background-color: #ffffff07;
 	}
@@ -49,15 +50,15 @@
 	<div class="flex-r gap align-i-c"><a href="/" class="button">🠈</a><h1>Unicode Analyzer</h1></div>
 	<textarea id="analyser" placeholder="Type here"></textarea>
 	<div class="flex-r gap">
-		<label><input id="unique-checkbox" type="checkbox"> Only list unique chars</label>
+		<label><input id="unique-checkbox" type="checkbox"> Unique</label>
 		<label><input id="sort-checkbox" type="checkbox"> Sort</label>
 	</div>
 	<div id="list"></div>
 	<template id="list-item">
 		<div class="row">
-			<div class="u-char"></div>
+			<button class="u-char"></button>
 			<div class="u-name"></div>
-			<div class="u-code"></div>
+			<button class="u-code"></button>
 			<div class="u-cat"></div>
 		</div>
 	</template>
@@ -208,17 +209,30 @@ function utf16_codePointIsSurrogate(codePoint) {
 function parseHex(str) {
 	return parseInt(str, 16)
 }
+function copyThisTextContent(e) {
+	set_clipboard(this.textContent);
+	reapply_class(this, "flash-fade");
+}
 function makeRow(char, udata) {
 	const frag = tmpl_row.content.cloneNode(true);
-	$(frag, '.u-char').textContent = char;
-	$(frag, '.u-code').textContent = "U+" + getCode(udata);
+
+	const u_char = $(frag, '.u-char');
+	u_char.textContent = char;
+	on("click", u_char, copyThisTextContent);
+
+	const u_code = $(frag, '.u-code');
+	u_code.textContent = getCode(udata);
+	on("click", u_code, copyThisTextContent);
+
 	$(frag, '.u-name').textContent = getName(udata);
-	const cat_el = $(frag, '.u-cat');
+
+	const u_cat = $(frag, '.u-cat');
 	const cat_val = getCategoryInfo(udata);
 	if (cat_val) {
-		cat_el.textContent = cat_val.name;
-		cat_el.title = cat_val.info;
+		u_cat.textContent = cat_val.name;
+		u_cat.title = cat_val.info;
 	}
+
 	return frag;
 }
 function sortChildren(parent, compareFn) {

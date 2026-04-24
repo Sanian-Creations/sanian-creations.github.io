@@ -69,10 +69,4 @@ tr:focus a {
 	display: none;
 }
 
-.flash-fade {
-	animation: flash-fade 1.5s 1 ease-out;
-}
-@keyframes flash-fade {
-	from { background-color: white; }
-	to   {  }
-}
+

@@ -42,7 +42,7 @@ class TVShow extends HTMLTableRowElement { // json serializable
 
 		this.setAttribute("tabindex", 0);
 		this.append(tvshow_template.content.cloneNode(true)); // true for deepcopy
-		
+
 		this.update_all();
 		this.init_callbacks();
 	}
@@ -58,11 +58,11 @@ class TVShow extends HTMLTableRowElement { // json serializable
 			} break;
 			case "episode_total": {
 				const should_display = this.data.episode_total > 0;
-				this.querySelector(".episode_total").innerText = should_display 
-					? `/ ${this.data.episode_total}` 
+				this.querySelector(".episode_total").innerText = should_display
+					? `/ ${this.data.episode_total}`
 					: "";
 			} break;
-			case "episode_number": 
+			case "episode_number":
 				this.querySelector(".episode_number").innerText = `Ep. ${this.data.episode_number}`;
 				// FALLTHROUGH IS ACTUALLY USEFUL FOR ONCE HOLYYY
 			case "link": {
@@ -81,7 +81,7 @@ class TVShow extends HTMLTableRowElement { // json serializable
 		this.data[fieldname] = val;
 		this.update(fieldname);
 	}
- 
+
 	inc_episode_by(amount) {
 		this.data.episode_number += amount;
 		this.update("episode_number");
@@ -205,7 +205,7 @@ new_tvshow_btn.addEventListener("click", function () {
 		const input = inputs[i];
 
 		// Every input has a data-field attribute that specifies which field that input is for
-		const field = input.dataset.field; 
+		const field = input.dataset.field;
 		if (input.constructor === HTMLInputElement) {
 			input.valueAsNumber = tvshow.data[field];
 		} else {
@@ -219,7 +219,7 @@ new_tvshow_btn.addEventListener("click", function () {
 
 		list_elem.append(tvshow);
 		save_list();
-	
+
 		tvshow.focus();
 	}
 	edit_dialog.dataset.mode = "add";
@@ -237,11 +237,8 @@ export_button.addEventListener("click", e => {
 export_button_copy.addEventListener("click", async e => {
 	e.preventDefault(); // Do not close the dialog.  MUST be called before any 'await' or event will have passed
 	await set_clipboard(export_textarea.value);
-	
-	// See: https://css-tricks.com/restart-css-animation/
-	export_button_copy.classList.remove("flash-fade");
-	void export_button_copy.offsetWidth;
-	export_button_copy.classList.add("flash-fade");
+
+	reapply_class(export_button_copy, "flash-fade");
 });
 
 //
@@ -269,9 +266,9 @@ import_button_paste.addEventListener("click", async e => {
 });
 function import_from_textarea() {
 	const err = load_list_from_json(import_textarea.value);
-	if (err) { 
+	if (err) {
 		alert(err);
-		return; 
+		return;
 	}
 	import_textarea.value = "";
 	save_list();
@@ -322,7 +319,7 @@ function generate_link(link, ep) {
 }
 
 /**
- * @param {string} input_json 
+ * @param {string} input_json
  * @returns {Error}
  */
 function load_list_from_json(input_json) {
@@ -365,20 +362,8 @@ function element_insert(parent, index, new_element) {
 	}
 }
 
-async function set_clipboard(text) {
-	// Retarded API.
-	// https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
-	const type = "text/plain";
-	const blob = new Blob([text], { type });
-	const data = [new ClipboardItem({ [type]: blob })];
-	await navigator.clipboard.write(data);
-}
-async function get_clipboard() {
-	return await navigator.clipboard.readText();
-}
-
 /**
- * @param {string} json 
+ * @param {string} json
  * @returns {[any, Error]}
  */
 function try_json_parse(json) /* [parsed, err] */ {
@@ -390,7 +375,7 @@ function try_json_parse(json) /* [parsed, err] */ {
 }
 
 /**
- * @param {string} json 
+ * @param {string} json
  * @returns {[Array, Error]}
  */
 function try_json_parse_array(json) /* [arr, err] */ {
@@ -410,7 +395,7 @@ function try_json_parse_array(json) /* [arr, err] */ {
 // main code
 //
 {
-	const json_data = localStorage.getItem("show_list.list") 
+	const json_data = localStorage.getItem("show_list.list")
 			?? `[{"episode_number":3,"episode_total":12,"title":"Name of a show (click this)","link":"https://example.com/ep=EPISODE_NUMBER","air_time":"Sundays"}]`;
 
 	const err = load_list_from_json(json_data);

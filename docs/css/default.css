@@ -1,7 +1,11 @@
 :root {
-	font-size: 16px;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-size: 15px;
 	color: #fbfbfe;
 	--spacing: 10px;
+	--accent-color: #00cadb;
+	--input-bgcolor: #2b2a33;
+	accent-color: var(--accent-color);
 }
 
 * {
@@ -11,8 +15,6 @@ html {
 	background-color: #1c1b22;
 }
 body {
-	font-family: sans-serif;
-
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -27,6 +29,7 @@ table {
 }
 
 button, .button {
+	font-size: 1em;
 	background: #2c2b32;
 	font-weight: bold;
 	color: inherit;
@@ -70,17 +73,32 @@ textarea {
 input:invalid {
 	background: #681212;
 }
-input, textarea, my-input {
-  background-color: #23222b;
-  border: 1px solid #7c7b82;
-  border-radius: 4px;
-  color: #fbfbfe;
-  padding: 5px;
+:where(input, textarea, my-input) {
+	background-color: var(--input-bgcolor);
+	border: 1px solid #bfbfc9;
+	border-radius: 4px;
+	color: #fbfbfe;
+	padding: 5px;
 }
 :is(input, textarea, my-input):focus-visible {
 	border-color: transparent;
-	outline: 2px solid #00ddff;
+	outline: 2px solid var(--accent-color);
 	outline-offset: -1px;
+}
+:where(input[type="checkbox"]) {
+	width: 16px;
+	height: 16px;
+	border-color: #8f8f9d;
+	border-radius: 3px;
+	appearance: none;
+	:where(&:checked) {
+		appearance: auto;
+	}
+	:where(label:has(>&)) {
+		align-items: center;
+		display: flex;
+		gap: .5em;
+	}
 }
 
 my-input {
@@ -96,3 +114,11 @@ li {
 .flex-r { display: flex; flex-direction: row; }
 .align-i-c { align-items: center; }
 .gap { gap: var(--spacing); }
+
+.flash-fade {
+	animation: flash-fade 1.0s 1 ease-out;
+}
+@keyframes flash-fade {
+	from { background-color: white; }
+	to   {  }
+}

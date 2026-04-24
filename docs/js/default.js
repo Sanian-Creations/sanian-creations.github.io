@@ -27,6 +27,24 @@
 	}
 }
 
+async function set_clipboard(text) {
+	// Retarded API.
+	// https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
+	const type = "text/plain";
+	const blob = new Blob([text], { type });
+	const data = [new ClipboardItem({ [type]: blob })];
+	await navigator.clipboard.write(data);
+}
+async function get_clipboard() {
+	return await navigator.clipboard.readText();
+}
+function reapply_class(el, cl) {
+	// See: https://css-tricks.com/restart-css-animation/
+	el.classList.remove(cl);
+	void el.offsetWidth;
+	el.classList.add(cl);
+}
+
 const qs = document.querySelector.bind(document);
 const qsa = document.querySelectorAll.bind(document);
 const $ = (a, b) => {
