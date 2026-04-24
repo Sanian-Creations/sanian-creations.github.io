@@ -88,7 +88,7 @@ code   name                     gcat  ccc   bc  dt  dm nt nv bm u1n  ic   upp   
 13 simple lowercase mapping
 14 simple titlecase mapping
 */
-const tmpl = $("#list-item");
+const tmpl_row = $("#list-item");
 const list = $("#list");
 const analyser = $("#analyser");
 const unique_checkbox = $("#unique-checkbox");
@@ -159,8 +159,7 @@ const ranges = [];
 		unicodemap[parseHex(udata[0])] = udata;
 	}
 }
-function getUnicodeData(char) {
-	const codePoint = char.codePointAt(0);
+function getUnicodeData(codePoint) {
 	const udata = unicodemap[codePoint];
 	if (udata) return udata;
 
@@ -195,8 +194,32 @@ function getCategoryInfo(udata) {
 	return general_category_values[udata[2]] ?? empty_category_value;
 }
 
+function utf16_isSurrogatePair(high, low) {
+	return high >= 0xD800 && high <= 0xDBFF && low  >= 0xDC00 && low  <= 0xDFFF;
+}
+function utf16_combineSurrogates(high, low) {
+	// NOTE: when characters are sequential in a string, codePointAt(i) will already combine surrogate pairs and return the correct codepoint.
+	return 0x10000 + (high - 0xD800) * 0x400 + (low - 0xDC00);
+}
+function utf16_codePointIsSurrogate(codePoint) {
+	return codePoint > 0xFFFF;
+}
+
 function parseHex(str) {
 	return parseInt(str, 16)
+}
+function makeRow(char, udata) {
+	const frag = tmpl_row.content.cloneNode(true);
+	$(frag, '.u-char').textContent = char;
+	$(frag, '.u-code').textContent = "U+" + getCode(udata);
+	$(frag, '.u-name').textContent = getName(udata);
+	const cat_el = $(frag, '.u-cat');
+	const cat_val = getCategoryInfo(udata);
+	if (cat_val) {
+		cat_el.textContent = cat_val.name;
+		cat_el.title = cat_val.info;
+	}
+	return frag;
 }
 function sortChildren(parent, compareFn) {
   const children = Array.from(parent.children);
@@ -205,34 +228,29 @@ function sortChildren(parent, compareFn) {
 }
 const unique_set = new Set();
 function update(e) {
+	const do_sort = sort_checkbox.checked;
+	const do_unique = unique_checkbox.checked;
+
 	list.replaceChildren();
 
 	let chars = analyser.value;
 
-	if (unique_checkbox.checked) {
-		unique_set.clear();
-		for (let i = 0; i < chars.length; i++) {
-			unique_set.add(chars[i])
-		}
-		chars = Array.from(unique_set.values());
-	}
+	if (do_unique) unique_set.clear();
 
 	for (let i = 0; i < chars.length; i++) {
-		const c = chars[i];
-		const udata = getUnicodeData(c);
-		const frag = tmpl.content.cloneNode(true);
-		$(frag, '.u-char').textContent = c;
-		$(frag, '.u-code').textContent = "U+" + getCode(udata);
-		$(frag, '.u-name').textContent = getName(udata);
-		const cat_el = $(frag, '.u-cat');
-		const cat_val = getCategoryInfo(udata);
-		if (cat_val) {
-			cat_el.textContent = cat_val.name;
-			cat_el.title = cat_val.info;
+		const codePoint = chars.codePointAt(i);
+		const char = codePoint > 0xFFFF ? chars.slice(i, 2 + i++) : chars[i];
+		if (do_unique) {
+			if (!unique_set.has(char)) {
+				unique_set.add(char);
+				list.append(makeRow(char, getUnicodeData(codePoint)));
+			}
+		} else {
+			list.append(makeRow(char, getUnicodeData(codePoint)));
 		}
-		list.append(frag);
 	}
-	if (sort_checkbox.checked) {
+
+	if (do_sort) {
 		sortChildren(list, (a, b) => $(a, ".u-char").textContent.codePointAt(0) > $(b, ".u-char").textContent.codePointAt(0));
 	}
 }
