@@ -7,7 +7,7 @@
 
 	<link rel="stylesheet" href="css/reset.css">
 	<link rel="stylesheet" href="css/default.css">
-	<script src="js/default.js"></script>
+	<script type="module" src="js/default.js"></script>
 	<style>
 #analyser {
 	width: 600px;
@@ -62,7 +62,9 @@
 			<div class="u-cat"></div>
 		</div>
 	</template>
-	<script>(async () => {
+	<script type="module">"use strict";
+import {$,on,reapply_class,set_clipboard} from "/js/default.js";
+(async () => {
 // https://unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
 // https://unicode.org/reports/tr44/#UnicodeData.txt
 

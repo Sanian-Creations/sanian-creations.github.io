@@ -3,54 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
 <link rel="stylesheet" href="/css/reset.css">
 <link rel="stylesheet" href="/css/default.css">
-<script src="/js/default.js"></script>
-	<style>
-		table {
-			border-collapse: separate;
-			border-spacing: 5px;
-		}
-		td:not(:first-child) {
-			padding: 10px;
-			margin: 10px;
-			width: 150px;
-			border-radius: 5px;
-			border: 1px solid black;
-			background-color: #444;
-		}
+<link rel="modulepreload" href="/js/reorderable.js">
+<script type="module" src="/js/default.js"></script>
+<style>
+table {
+	border-collapse: separate;
+	border-spacing: 5px;
+}
+td:not(:first-child) {
+	padding: 10px;
+	margin: 10px;
+	width: 150px;
+	border-radius: 5px;
+	border: 1px solid black;
+	background-color: #444;
+}
 
-		#my-reorderable>tr>td:first-child {
-			cursor: ns-resize;
-			width: 50px;
-			text-align: center;
-		}
-		#my-reorderable>tr>td:first-child::before {
-			content: "";
-			color: red;
-			display: inline-block;
-			width: 25px;
-			height: 9px;
-			background-image: linear-gradient(#666 1px, transparent 0);
-			background-size: auto 4px;
-		}
+#my-reorderable>tr>td:first-child {
+	cursor: ns-resize;
+	width: 50px;
+	text-align: center;
+}
+#my-reorderable>tr>td:first-child::before {
+	content: "";
+	color: red;
+	display: inline-block;
+	width: 25px;
+	height: 9px;
+	background-image: linear-gradient(#666 1px, transparent 0);
+	background-size: auto 4px;
+}
 
-		/*
-		Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move
-		along when you drag them, but at least you CAN have borders on tr elems...
-		But if you do 'border-collapse: separate', then you cannot have borders on tr, only on td
-		*/
+/*
+Note: if you do 'border-collapse: collapse' then borders on the td and tr do not move
+along when you drag them, but at least you CAN have borders on tr elems...
+But if you do 'border-collapse: separate', then you cannot have borders on tr, only on td
+*/
 
-		/* this is REQUIRED for mobile to work properly */
-		#my-reorderable>tr>td:first-child {
-			touch-action: none; /* could maaybe do this dynamically...? or maybe add it in .moving, but idk if we add that class too late */
-		}
-		.moving {
-			z-index: 1000; /*with animations below, some elems will shortly go in front of the moving one */
-			position: relative; /*otherwise z-index does nothing*/
-		}
-	</style>
+/* this is REQUIRED for mobile to work properly */
+#my-reorderable>tr>td:first-child {
+	touch-action: none; /* could maaybe do this dynamically...? or maybe add it in .moving, but idk if we add that class too late */
+}
+.moving {
+	z-index: 1000; /*with animations below, some elems will shortly go in front of the moving one */
+	position: relative; /*otherwise z-index does nothing*/
+}
+</style>
 </head>
 <body style="min-height: 150vh; justify-content: start;">
 	<div class="flex-r gap align-i-c"><a href="/" class="button">🠈</a><h1>Re-orderable list</h1></div>
@@ -77,189 +77,24 @@
 		</tbody>
 	</table>
 	<p hidden id="secret-message">Most interactive lists can't do that!</p>
+<script type="module">
+import {make_reorderable} from "/js/reorderable.js";
+import {$,on} from "/js/default.js"
+make_reorderable($("#my-reorderable"), "#my-reorderable>tr>td:first-child");
+let num_active_drags = 0;
+let secret_shown = false;
+on("reorder-pickup", window, ()=>{num_active_drags++});
+on("reorder-drop", window, ()=>{num_active_drags--});
+on("scroll", window, ()=>{
+	if (!secret_shown && num_active_drags > 0) {
+		secret_shown = true;
+		$("#secret-message").removeAttribute("hidden");
+	}
+})
 
-	<script>
-		"use strict";
-
-		make_reorderable(document.querySelector("#my-reorderable"), "#my-reorderable>tr>td:first-child");
-
-		const stop_transition = e => e.target.style.transition = "";
-		const opts_once = { once: true };
-
-		const actions = []; // re-use action objects
-
-		// Assumes the elements in the container are displayed top-to-bottom.
-		/**
-		 * @param {HTMLElement} container - the container of which the children get click-and-drag reordering.
-		 * @param {?string} move_handle_selector - optional selector for move handles, without this children of container can be click/dragged wherever you click them.
-		 */
-		function make_reorderable(container, move_handle_selector) {
-			document.createDocumentFragment().querySelector(move_handle_selector); // Run the selector on something to ensure it is valid.
-
-
-			container.addEventListener("pointerdown", e => {
-				if (e.button !== 0) return; // left-clicks only
-				if (e.target === container) return; // must at least be a child of the container
-
-				// Walk up parents of e.target to find the one that is a direct child of container, that one is the element that gets moved.
-				// Meanwhile, check that e.target or one of its parents matches the selector of a move handle.
-				let el = e.target;
-				let clicked_handle = !move_handle_selector || el.matches(move_handle_selector);
-				while (el.parentElement !== container) {
-					el = el.parentElement;
-					if (!clicked_handle && el.matches(move_handle_selector)) clicked_handle = true;
-				}
-
-				if (!clicked_handle) return;
-				if (el.classList.contains("moving")) return; // don't move the same element with two fingers...
-
-				// Now that we know for sure we're moving this element...
-				e.preventDefault(); // stops text selection
-
-				const a = actions.pop() ?? new MoveAction();
-				a.init(container, el, e.pointerId, e.clientY);
-			});
-		}
-
-		class MoveAction {
-		/** @type { HTMLElement } */ container;
-		/** @type { HTMLElement } */ elem;
-		/** @type { Number } */ pointerId;
-		/** @type { Number } */ current_index;
-		/** @type { Number } */ hover_pos; // Y of the mouse/pointer, that's where the element should be positioned.
-		/** @type { Number } */ hover_offset; // offset applied to the element such that it appears to be at hover_pos
-		/** @type { AbortController } */ abort_controller;
-
-			init(container, elem, pointerId, hover_pos) {
-				this.container = container;
-				this.elem = elem;
-				this.pointerId = pointerId;
-				this.hover_offset = 0;
-				this.hover_pos = hover_pos;
-
-				this.current_index = Array.prototype.indexOf.call(this.container.children, this.elem);
-				if (this.current_index === -1) throw new Error("this.elem should be a direct child of container");
-
-				this.elem.classList.add("moving");
-				this.elem.style.transition = "";
-
-				this.abort_controller = new AbortController();
-
-				const opts = { signal: this.abort_controller.signal };
-
-				this.container.setPointerCapture(this.pointerId);
-				this.container.addEventListener("pointermove", this, opts);
-				this.container.addEventListener("pointerup", this, opts);
-				this.container.addEventListener("pointercancel", this, opts);
-				this.container.addEventListener("contextmenu", this, opts);
-				window.addEventListener("scroll", this, opts);
-
-				this.move();
-			}
-
-			handleEvent(e) {
-				if (e.pointerId !== undefined && e.pointerId !== this.pointerId) return;
-
-				switch (e.type) {
-					case "pointermove":   this.hover_pos = e.clientY; this.move(); break;
-					case "scroll":        this.move(); maybe_show_secret(); break;
-					case "pointercancel": this.stop_moving(); break;
-					case "pointerup":     this.stop_moving(); break;
-					case "contextmenu":   e.preventDefault(); break;
-				}
-			}
-
-			stop_moving() {
-				this.container.releasePointerCapture(this.pointerId);
-
-				this.elem.classList.remove("moving");
-				this.elem.style.transition = "transform 100ms ease";
-				this.elem.style.transform = "";
-
-				this.elem.addEventListener("transitionend", stop_transition, opts_once);
-
-				this.abort_controller.abort();
-				actions.push(this);
-			}
-
-			move() {
-				const mybounds = this.elem.getBoundingClientRect();
-				const half = mybounds.height/2;
-				let base_pos = mybounds.y - this.hover_offset + half;
-
-				let closest_index = this.current_index;
-				let closest_dist =  Math.abs(this.hover_pos - base_pos);
-				let closest_base_pos;
-
-				const moving_up = this.hover_pos < base_pos;
-				const dir = moving_up ? -1 : 1;
-				const count = moving_up ? this.current_index : this.container.children.length - this.current_index - 1;
-
-				const passed_elems = [];
-				const old_positions = [];
-				for (let i = 0; i < count; i++) {
-					const other_index = this.current_index + (1 + i) * dir;
-					const other_elem = this.container.children[other_index];
-					if (other_elem.style.transition) continue;
-					const other_bounds = other_elem.getBoundingClientRect();
-					const other_pos = other_bounds.y + (moving_up ? half : other_bounds.height - half);
-					const dist = Math.abs(this.hover_pos - other_pos);
-
-					if (dist < closest_dist) {
-						closest_dist = dist;
-						closest_index = other_index;
-						closest_base_pos = other_pos;
-						passed_elems.push(other_elem);
-						old_positions.push(other_bounds.y);
-					} else break;
-				}
-
-				if (closest_index !== this.current_index) {
-					this.elem.remove();
-					insert_element(this.container, closest_index, this.elem);
-					this.current_index = closest_index;
-					base_pos = closest_base_pos;
-				}
-
-				for (let i = 0; i < passed_elems.length; i++) {
-					const el = passed_elems[i];
-					const offset_to_old_pos = old_positions[i] - el.getBoundingClientRect().y;
-
-					el.style.transform = `translate(0, ${offset_to_old_pos}px)`;
-					el.offsetHeight; // reflow
-					el.style.transition = "100ms ease"; // if you slow this down it's actually super buggy, but at 100ms it's really not noticable at all
-					el.style.transform = "";
-
-					el.addEventListener("transitionend", stop_transition, opts_once);
-				}
-
-				let offset = this.hover_pos - base_pos;
-				if (this.current_index === 0) {
-					offset = Math.max(offset, 0);
-				} else if (this.current_index === this.container.children.length-1) {
-					offset = Math.min(offset, 0);
-				}
-				this.elem.style.transform = `translate(5px, ${offset}px)`;
-				this.hover_offset = offset;
-			}
-		}
-
-		function insert_element(parent, index, elem) {
-			if (index < parent.children.length) {
-				parent.insertBefore(elem, parent.children[index]);
-			} else {
-				parent.appendChild(elem);
-			}
-		}
-
-		function maybe_show_secret() {
-			$("#secret-message").removeAttribute("hidden")
-		}
-
-
-		// TODO:
-		// It would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser
-		// whilst updating the content of an iframe to show you what it does. But that may be a bit out of my league.
-	</script>
+// TODO:
+// It would be cool to make a system like those online tools that let you type out JS CSS and HTML in the browser
+// whilst updating the content of an iframe to show you what it does. But that may be a bit out of my league.
+</script>
 </body>
 </html>
