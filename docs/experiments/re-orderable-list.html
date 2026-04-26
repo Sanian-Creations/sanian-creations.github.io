@@ -28,7 +28,6 @@ td:not(:first-child) {
 }
 #my-reorderable>tr>td:first-child::before {
 	content: "";
-	color: red;
 	display: inline-block;
 	width: 25px;
 	height: 9px;
@@ -45,10 +44,6 @@ But if you do 'border-collapse: separate', then you cannot have borders on tr, o
 /* this is REQUIRED for mobile to work properly */
 #my-reorderable>tr>td:first-child {
 	touch-action: none; /* could maaybe do this dynamically...? or maybe add it in .moving, but idk if we add that class too late */
-}
-.moving {
-	z-index: 1000; /*with animations below, some elems will shortly go in front of the moving one */
-	position: relative; /*otherwise z-index does nothing*/
 }
 </style>
 </head>

@@ -39,8 +39,29 @@
 	grid-column: 1 / -1; /* span all columns */
 	grid-template-columns: subgrid;
 	align-items: center;
+	background-color: var(--bgcolor);
 	&:where(:nth-child(2n+1)) {
-		background-color: #ffffff07;
+		background-color: var(--bgcolor-l);
+	}
+}
+.drag-handle {
+	#list:not(.reorderable) & {
+		display: none;
+	}
+	&::before {
+		content: "";
+		cursor: ns-resize;
+		display: inline-block;
+		width: 25px;
+		height: 9px;
+		background-image: linear-gradient(#666 1px, transparent 0);
+		background-size: auto 4px;
+	}
+	:has(>&) {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: var(--spacing);
 	}
 }
 	</style>
@@ -56,14 +77,18 @@
 	<div id="list"></div>
 	<template id="list-item">
 		<div class="row">
-			<button class="u-char"></button>
+			<div>
+				<div class="drag-handle"></div>
+				<button class="u-char"></button>
+			</div>
 			<div class="u-name"></div>
 			<button class="u-code"></button>
 			<div class="u-cat"></div>
 		</div>
 	</template>
 	<script type="module">"use strict";
-import {$,on,reapply_class,set_clipboard} from "/js/default.js";
+import {$,$$,on,reapply_class,set_clipboard} from "/js/default.js";
+import {make_reorderable} from "/js/reorderable.js";
 (async () => {
 // https://unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
 // https://unicode.org/reports/tr44/#UnicodeData.txt
@@ -161,6 +186,9 @@ const ranges = [];
 		}
 		unicodemap[parseHex(udata[0])] = udata;
 	}
+
+	make_reorderable(list, ".drag-handle");
+	on("reorder-drop", list, e => analyser.value = Array.prototype.map.call($$(".u-char"), e => e.textContent).join(""));
 }
 function getUnicodeData(codePoint) {
 	const udata = unicodemap[codePoint];
@@ -247,6 +275,11 @@ function update(e) {
 	const do_sort = sort_checkbox.checked;
 	const do_unique = unique_checkbox.checked;
 
+	if (!do_sort && !do_unique) {
+		list.classList.add("reorderable");
+	} else {
+		list.classList.remove("reorderable");
+	}
 	list.replaceChildren();
 
 	let chars = analyser.value;

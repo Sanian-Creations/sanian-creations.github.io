@@ -5,6 +5,8 @@
 	--spacing: 10px;
 	--accent-color: #00cadb;
 	--input-bgcolor: #2b2a33;
+	--bgcolor: #1c1b22;
+	--bgcolor-l: #222128;
 	accent-color: var(--accent-color);
 }
 
@@ -12,7 +14,7 @@
 	box-sizing: border-box;
 }
 html {
-	background-color: #1c1b22;
+	background-color: var(--bgcolor);
 }
 body {
 	display: flex;
