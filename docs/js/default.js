@@ -35,7 +35,8 @@ export async function set_clipboard(text) {
 export async function get_clipboard() {
 	return await navigator.clipboard.readText();
 }
-export const click_backdrops_to_close_dialogs = () => {
+
+{
 	let mousedown_x, mousedown_y;
 	on("mousedown", document, e => {
 		mousedown_x = e.clientX;

@@ -1,4 +1,5 @@
 import "./my-input.js"; // import nothing, but ensures the custom component is loaded
+import {set_clipboard,get_clipboard,reapply_class} from "./default.js"
 
 let moving = undefined; // tvshow which is currently being moved, or undefined if one is not being moved
 
