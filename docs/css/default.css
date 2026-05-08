@@ -15,6 +15,9 @@
 }
 html {
 	background-color: var(--bgcolor);
+	background: linear-gradient(#000A, #000A), url("/img/concrete-wall-repeat-vertical.jpg");
+	background-size: 100% auto;
+	background-repeat: repeat-y;
 }
 body {
 	display: flex;
